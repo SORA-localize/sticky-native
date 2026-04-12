@@ -1,35 +1,38 @@
+import AppKit
 import SwiftUI
 
-struct ProbeEditorView: View {
+struct MemoWindowView: View {
   private enum HoveredControl {
     case pin
     case close
   }
 
+  @ObservedObject var memo: MemoWindow
+  let focusToken: UUID
+  let isPinned: Bool
+  let onPinToggle: () -> Void
   let onClose: () -> Void
-  let windowState: ProbeWindowState
 
-  @State private var draft = ""
-  @State private var isPinned = false
   @State private var hoveredControl: HoveredControl?
-  @FocusState private var isEditorFocused: Bool
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      HStack {
-        Circle()
-          .fill(Color.white.opacity(0.55))
-          .frame(width: 10, height: 10)
+      HStack(spacing: 12) {
+        HStack(spacing: 10) {
+          Circle()
+            .fill(Color.white.opacity(0.55))
+            .frame(width: 10, height: 10)
 
-        Text("Seamless Window Probe")
-          .font(.system(size: 12, weight: .semibold))
-          .foregroundStyle(.primary)
+          Text(memo.title)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.primary)
+        }
 
-        Spacer()
+        WindowDragHandle()
+          .frame(maxWidth: .infinity)
+          .frame(height: 30)
 
-        Button {
-          isPinned.toggle()
-        } label: {
+        Button(action: onPinToggle) {
           Image(systemName: isPinned ? "pin.fill" : "pin")
             .font(.system(size: 12, weight: .semibold))
             .frame(width: 28, height: 28)
@@ -43,9 +46,7 @@ struct ProbeEditorView: View {
           hoveredControl = isHovered ? .pin : (hoveredControl == .pin ? nil : hoveredControl)
         }
 
-        Button {
-          onClose()
-        } label: {
+        Button(action: onClose) {
           Image(systemName: "xmark")
             .font(.system(size: 11, weight: .bold))
             .frame(width: 28, height: 28)
@@ -60,7 +61,6 @@ struct ProbeEditorView: View {
         }
       }
       .animation(.easeOut(duration: 0.12), value: hoveredControl)
-      .animation(.easeOut(duration: 0.12), value: isPinned)
       .padding(.horizontal, 16)
       .padding(.top, 14)
       .padding(.bottom, 12)
@@ -68,26 +68,20 @@ struct ProbeEditorView: View {
       Divider()
 
       HStack {
-        Text(isPinned ? "Pinned state toggled" : "Click pin while another app is frontmost")
+        Text(isPinned ? "Pinned" : "Unpinned")
           .font(.system(size: 11, weight: .medium))
           .foregroundStyle(.secondary)
+
         Spacer()
-        Text("Phase 1-4")
+
+        Text("Phase 2")
           .font(.system(size: 11, weight: .medium))
           .foregroundStyle(.secondary)
       }
       .padding(.horizontal, 16)
       .padding(.vertical, 10)
 
-      TextEditor(text: $draft)
-        .font(.system(size: 16))
-        .focused($isEditorFocused)
-        .scrollContentBackground(.hidden)
-        .padding(14)
-        .background(
-          RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(Color.white.opacity(0.12))
-        )
+      MemoEditorView(memo: memo, focusToken: focusToken)
         .padding(.horizontal, 12)
         .padding(.bottom, 12)
     }
@@ -99,16 +93,6 @@ struct ProbeEditorView: View {
         .stroke(Color.white.opacity(0.35), lineWidth: 1)
     )
     .padding(10)
-    .onAppear {
-      DispatchQueue.main.async {
-        isEditorFocused = true
-      }
-    }
-    .onChange(of: windowState.focusTrigger) { _, _ in
-      DispatchQueue.main.async {
-        isEditorFocused = true
-      }
-    }
   }
 
   private var pinBackgroundColor: Color {
@@ -121,5 +105,34 @@ struct ProbeEditorView: View {
 
   private var closeBackgroundColor: Color {
     hoveredControl == .close ? Color.white.opacity(0.24) : Color.white.opacity(0.14)
+  }
+}
+
+private struct WindowDragHandle: NSViewRepresentable {
+  func makeNSView(context: Context) -> WindowDragHandleView {
+    WindowDragHandleView()
+  }
+
+  func updateNSView(_ nsView: WindowDragHandleView, context: Context) {}
+}
+
+private final class WindowDragHandleView: NSView {
+  override init(frame frameRect: NSRect) {
+    super.init(frame: frameRect)
+    wantsLayer = true
+    layer?.backgroundColor = NSColor.clear.cgColor
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    true
+  }
+
+  override func mouseDown(with event: NSEvent) {
+    window?.performDrag(with: event)
   }
 }

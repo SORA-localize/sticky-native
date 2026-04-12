@@ -10,23 +10,29 @@
 		BA0000000000000000000101 /* StickyNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000001 /* StickyNativeApp.swift */; };
 		BA0000000000000000000102 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000002 /* AppDelegate.swift */; };
 		BA0000000000000000000103 /* SeamlessWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000003 /* SeamlessWindow.swift */; };
-		BA0000000000000000000104 /* ProbeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000004 /* ProbeEditorView.swift */; };
-		BA0000000000000000000105 /* ProbeWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000005 /* ProbeWindowController.swift */; };
 		BA0000000000000000000106 /* SeamlessHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000007 /* SeamlessHostingView.swift */; };
 		BA0000000000000000000107 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000008 /* HotkeyManager.swift */; };
-		BA0000000000000000000108 /* ProbeWindowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000009 /* ProbeWindowState.swift */; };
+		BA0000000000000000000109 /* MemoWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000010 /* MemoWindow.swift */; };
+		BA0000000000000000000110 /* MemoEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000011 /* MemoEditorView.swift */; };
+		BA0000000000000000000111 /* MemoWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000012 /* MemoWindowView.swift */; };
+		BA0000000000000000000112 /* MemoWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000013 /* MemoWindowController.swift */; };
+		BA0000000000000000000113 /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000014 /* WindowManager.swift */; };
+		BA0000000000000000000114 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000015 /* MenuBarController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		BA0000000000000000000001 /* StickyNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyNativeApp.swift; sourceTree = "<group>"; };
 		BA0000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		BA0000000000000000000003 /* SeamlessWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeamlessWindow.swift; sourceTree = "<group>"; };
-		BA0000000000000000000004 /* ProbeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeEditorView.swift; sourceTree = "<group>"; };
-		BA0000000000000000000005 /* ProbeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000006 /* StickyNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StickyNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA0000000000000000000007 /* SeamlessHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeamlessHostingView.swift; sourceTree = "<group>"; };
 		BA0000000000000000000008 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
-		BA0000000000000000000009 /* ProbeWindowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeWindowState.swift; sourceTree = "<group>"; };
+		BA0000000000000000000010 /* MemoWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoWindow.swift; sourceTree = "<group>"; };
+		BA0000000000000000000011 /* MemoEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoEditorView.swift; sourceTree = "<group>"; };
+		BA0000000000000000000012 /* MemoWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoWindowView.swift; sourceTree = "<group>"; };
+		BA0000000000000000000013 /* MemoWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoWindowController.swift; sourceTree = "<group>"; };
+		BA0000000000000000000014 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
+		BA0000000000000000000015 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,11 +62,14 @@
 				BA0000000000000000000001 /* StickyNativeApp.swift */,
 				BA0000000000000000000002 /* AppDelegate.swift */,
 				BA0000000000000000000003 /* SeamlessWindow.swift */,
-				BA0000000000000000000004 /* ProbeEditorView.swift */,
-				BA0000000000000000000005 /* ProbeWindowController.swift */,
 				BA0000000000000000000007 /* SeamlessHostingView.swift */,
 				BA0000000000000000000008 /* HotkeyManager.swift */,
-				BA0000000000000000000009 /* ProbeWindowState.swift */,
+				BA0000000000000000000010 /* MemoWindow.swift */,
+				BA0000000000000000000011 /* MemoEditorView.swift */,
+				BA0000000000000000000012 /* MemoWindowView.swift */,
+				BA0000000000000000000013 /* MemoWindowController.swift */,
+				BA0000000000000000000014 /* WindowManager.swift */,
+				BA0000000000000000000015 /* MenuBarController.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -142,11 +151,14 @@
 				BA0000000000000000000101 /* StickyNativeApp.swift in Sources */,
 				BA0000000000000000000102 /* AppDelegate.swift in Sources */,
 				BA0000000000000000000103 /* SeamlessWindow.swift in Sources */,
-				BA0000000000000000000104 /* ProbeEditorView.swift in Sources */,
-				BA0000000000000000000105 /* ProbeWindowController.swift in Sources */,
 				BA0000000000000000000106 /* SeamlessHostingView.swift in Sources */,
 				BA0000000000000000000107 /* HotkeyManager.swift in Sources */,
-				BA0000000000000000000108 /* ProbeWindowState.swift in Sources */,
+				BA0000000000000000000109 /* MemoWindow.swift in Sources */,
+				BA0000000000000000000110 /* MemoEditorView.swift in Sources */,
+				BA0000000000000000000111 /* MemoWindowView.swift in Sources */,
+				BA0000000000000000000112 /* MemoWindowController.swift in Sources */,
+				BA0000000000000000000113 /* WindowManager.swift in Sources */,
+				BA0000000000000000000114 /* MenuBarController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -194,6 +206,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.1.0;
@@ -215,6 +228,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MARKETING_VERSION = 0.1.0;
