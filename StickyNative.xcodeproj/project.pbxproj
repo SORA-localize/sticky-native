@@ -13,6 +13,8 @@
 		BA0000000000000000000104 /* ProbeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000004 /* ProbeEditorView.swift */; };
 		BA0000000000000000000105 /* ProbeWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000005 /* ProbeWindowController.swift */; };
 		BA0000000000000000000106 /* SeamlessHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000007 /* SeamlessHostingView.swift */; };
+		BA0000000000000000000107 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000008 /* HotkeyManager.swift */; };
+		BA0000000000000000000108 /* ProbeWindowState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000009 /* ProbeWindowState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +25,8 @@
 		BA0000000000000000000005 /* ProbeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000006 /* StickyNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StickyNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA0000000000000000000007 /* SeamlessHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeamlessHostingView.swift; sourceTree = "<group>"; };
+		BA0000000000000000000008 /* HotkeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyManager.swift; sourceTree = "<group>"; };
+		BA0000000000000000000009 /* ProbeWindowState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeWindowState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +59,8 @@
 				BA0000000000000000000004 /* ProbeEditorView.swift */,
 				BA0000000000000000000005 /* ProbeWindowController.swift */,
 				BA0000000000000000000007 /* SeamlessHostingView.swift */,
+				BA0000000000000000000008 /* HotkeyManager.swift */,
+				BA0000000000000000000009 /* ProbeWindowState.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -139,6 +145,8 @@
 				BA0000000000000000000104 /* ProbeEditorView.swift in Sources */,
 				BA0000000000000000000105 /* ProbeWindowController.swift in Sources */,
 				BA0000000000000000000106 /* SeamlessHostingView.swift in Sources */,
+				BA0000000000000000000107 /* HotkeyManager.swift in Sources */,
+				BA0000000000000000000108 /* ProbeWindowState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

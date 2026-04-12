@@ -3,6 +3,8 @@ import SwiftUI
 
 @MainActor
 final class ProbeWindowController: NSWindowController, NSWindowDelegate {
+  private let windowState = ProbeWindowState()
+
   init() {
     let window = SeamlessWindow(
       contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
@@ -17,11 +19,12 @@ final class ProbeWindowController: NSWindowController, NSWindowDelegate {
       rootView: ProbeEditorView(
         onClose: { [weak window] in
           window?.performClose(nil)
-        }
+        },
+        windowState: windowState
       )
     )
     hostingView.frame = CGRect(origin: .zero, size: window.frame.size)
-    hostingView.autoresizingMask = [.width, .height]
+    hostingView.autoresizingMask = NSView.AutoresizingMask(arrayLiteral: .width, .height)
     window.contentView = hostingView
     window.delegate = self
     window.titleVisibility = .hidden
@@ -37,5 +40,12 @@ final class ProbeWindowController: NSWindowController, NSWindowDelegate {
   @available(*, unavailable)
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+
+  func showAndFocusEditor() {
+    showWindow(nil)
+    window?.makeKeyAndOrderFront(nil)
+    NSApp.activate(ignoringOtherApps: true)
+    windowState.requestEditorFocus()
   }
 }
