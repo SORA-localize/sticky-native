@@ -19,6 +19,11 @@
 		BA0000000000000000000113 /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000014 /* WindowManager.swift */; };
 		BA0000000000000000000114 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000015 /* MenuBarController.swift */; };
 		BA0000000000000000000115 /* MemoWindowUIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000016 /* MemoWindowUIState.swift */; };
+		BA0000000000000000000116 /* PersistenceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000017 /* PersistenceModels.swift */; };
+		BA0000000000000000000117 /* SQLiteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000018 /* SQLiteStore.swift */; };
+		BA0000000000000000000118 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000019 /* libsqlite3.tbd */; };
+		BA0000000000000000000119 /* AutosaveScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000020 /* AutosaveScheduler.swift */; };
+		BA0000000000000000000120 /* PersistenceCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000021 /* PersistenceCoordinator.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +40,11 @@
 		BA0000000000000000000014 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
 		BA0000000000000000000015 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000016 /* MemoWindowUIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoWindowUIState.swift; sourceTree = "<group>"; };
+		BA0000000000000000000017 /* PersistenceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceModels.swift; sourceTree = "<group>"; };
+		BA0000000000000000000018 /* SQLiteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteStore.swift; sourceTree = "<group>"; };
+		BA0000000000000000000019 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
+		BA0000000000000000000020 /* AutosaveScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveScheduler.swift; sourceTree = "<group>"; };
+		BA0000000000000000000021 /* PersistenceCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceCoordinator.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -42,6 +52,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BA0000000000000000000118 /* libsqlite3.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,6 +64,7 @@
 			children = (
 				BA0000000000000000000302 /* StickyNativeApp */,
 				BA0000000000000000000303 /* Products */,
+				BA0000000000000000000019 /* libsqlite3.tbd */,
 			);
 			sourceTree = "<group>";
 		};
@@ -73,6 +85,10 @@
 				BA0000000000000000000014 /* WindowManager.swift */,
 				BA0000000000000000000015 /* MenuBarController.swift */,
 				BA0000000000000000000016 /* MemoWindowUIState.swift */,
+				BA0000000000000000000017 /* PersistenceModels.swift */,
+				BA0000000000000000000018 /* SQLiteStore.swift */,
+				BA0000000000000000000020 /* AutosaveScheduler.swift */,
+				BA0000000000000000000021 /* PersistenceCoordinator.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -163,6 +179,10 @@
 				BA0000000000000000000113 /* WindowManager.swift in Sources */,
 				BA0000000000000000000114 /* MenuBarController.swift in Sources */,
 				BA0000000000000000000115 /* MemoWindowUIState.swift in Sources */,
+				BA0000000000000000000116 /* PersistenceModels.swift in Sources */,
+				BA0000000000000000000117 /* SQLiteStore.swift in Sources */,
+				BA0000000000000000000119 /* AutosaveScheduler.swift in Sources */,
+				BA0000000000000000000120 /* PersistenceCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -3,11 +3,16 @@ import AppKit
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
   private let hotkeyManager = HotkeyManager()
-  private let windowManager = WindowManager()
+  private var windowManager: WindowManager!
   private let menuBarController = MenuBarController()
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
+
+    guard let store = try? SQLiteStore() else {
+      fatalError("Failed to open SQLite store")
+    }
+    windowManager = WindowManager(coordinator: PersistenceCoordinator(store: store))
 
     menuBarController.onNewMemo = { [weak self] in
       self?.windowManager.createNewMemoWindow()
@@ -26,6 +31,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       self?.windowManager.createNewMemoWindow()
     }
     hotkeyManager.registerNewMemoShortcut()
+
+    windowManager.restorePersistedOpenMemos()
+  }
+
+  func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+    windowManager.prepareForTermination()
+    return .terminateNow
   }
 
   func applicationWillTerminate(_ notification: Notification) {

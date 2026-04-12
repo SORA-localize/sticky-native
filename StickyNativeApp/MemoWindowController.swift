@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
@@ -6,17 +7,28 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   let memo: MemoWindow
 
   private let onClose: (ClosedMemoRecord) -> Void
+  private let onDraftChange: (UUID, String) -> Void
+  private let onFlush: (UUID, String) -> Void
+  private let onPinChange: (UUID, Bool) -> Void
   private let uiState: MemoWindowUIState
   private var hostingView: SeamlessHostingView<MemoWindowView>?
+  private var draftCancellable: AnyCancellable?
 
   init(
     memo: MemoWindow,
     origin: NSPoint?,
+    size: NSSize? = nil,
     initiallyPinned: Bool = false,
+    onDraftChange: @escaping (UUID, String) -> Void,
+    onFlush: @escaping (UUID, String) -> Void,
+    onPinChange: @escaping (UUID, Bool) -> Void,
     onClose: @escaping (ClosedMemoRecord) -> Void
   ) {
     self.memo = memo
     self.onClose = onClose
+    self.onDraftChange = onDraftChange
+    self.onFlush = onFlush
+    self.onPinChange = onPinChange
     self.uiState = MemoWindowUIState(isPinned: initiallyPinned)
 
     let window = SeamlessWindow(
@@ -43,6 +55,9 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     window.hasShadow = true
     window.setFrameAutosaveName("MemoWindow-\(memo.id.uuidString)")
 
+    if let size {
+      window.setContentSize(size)
+    }
     if let origin {
       window.setFrameOrigin(origin)
     } else {
@@ -50,6 +65,13 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     }
 
     applyPinState()
+
+    draftCancellable = memo.$draft
+      .dropFirst()
+      .sink { [weak self] draft in
+        guard let self else { return }
+        onDraftChange(memo.id, draft)
+      }
   }
 
   @available(*, unavailable)
@@ -60,23 +82,20 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   func showAndFocusEditor() {
     requestEditorFocus()
     showWindow(nil)
-    window?.makeKeyAndOrderFront(nil)
     NSApp.activate(ignoringOtherApps: true)
+    window?.makeKeyAndOrderFront(nil)
+    window?.orderFrontRegardless()
   }
 
   func pinWindow(_ pinned: Bool) {
     uiState.isPinned = pinned
     applyPinState()
+    onPinChange(memo.id, pinned)
   }
 
   func windowWillClose(_ notification: Notification) {
-    onClose(
-      ClosedMemoRecord(
-        memoID: memo.id,
-        origin: window?.frame.origin,
-        isPinned: uiState.isPinned
-      )
-    )
+    onFlush(memo.id, memo.draft)
+    onClose(ClosedMemoRecord(memoID: memo.id, frame: window?.frame))
   }
 
   var currentFrame: NSRect? {

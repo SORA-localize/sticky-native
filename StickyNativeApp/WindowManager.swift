@@ -2,8 +2,7 @@ import Foundation
 
 struct ClosedMemoRecord {
   let memoID: UUID
-  let origin: NSPoint?
-  let isPinned: Bool
+  let frame: NSRect?
 }
 
 @MainActor
@@ -13,10 +12,46 @@ final class WindowManager {
   private var closedMemoRecords: [ClosedMemoRecord] = []
   private var lastCascadeOrigin: NSPoint?
 
+  private let coordinator: PersistenceCoordinator
+  private let scheduler: AutosaveScheduler
+
   var onClosedStackChanged: (() -> Void)?
+  private var isTerminating = false
+
+  init(coordinator: PersistenceCoordinator) {
+    self.coordinator = coordinator
+    self.scheduler = AutosaveScheduler { [coordinator] id, draft in
+      coordinator.saveDraft(id: id, draft: draft)
+    }
+  }
 
   var canReopenClosedMemo: Bool {
     !closedMemoRecords.isEmpty
+  }
+
+  func restorePersistedOpenMemos() {
+    let memos = coordinator.fetchOpenMemos()
+    for persisted in memos {
+      let origin: NSPoint? = persisted.originX.flatMap { x in
+        persisted.originY.map { y in NSPoint(x: x, y: y) }
+      }
+      let size: NSSize? = persisted.width.flatMap { w in
+        persisted.height.map { h in NSSize(width: w, height: h) }
+      }
+      let memo = MemoWindow(id: persisted.id, draft: persisted.draft)
+      let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
+      openControllers[memo.id] = controller
+      controller.showAndFocusEditor()
+      lastCascadeOrigin = controller.currentFrame?.origin
+    }
+  }
+
+  func prepareForTermination() {
+    isTerminating = true
+    for (_, controller) in openControllers {
+      scheduler.flush(id: controller.memo.id, draft: controller.memo.draft)
+      coordinator.saveWindowState(id: controller.memo.id, frame: controller.currentFrame, isOpen: true)
+    }
   }
 
   func createNewMemoWindow() {
@@ -32,8 +67,21 @@ final class WindowManager {
       return
     }
 
-    let memo = MemoWindow(id: record.memoID)
-    let controller = makeController(for: memo, origin: record.origin, initiallyPinned: record.isPinned)
+    let persisted = coordinator.fetchMemo(id: record.memoID)
+    let draft = persisted?.draft ?? ""
+    let origin: NSPoint? = persisted.flatMap {
+      guard let x = $0.originX, let y = $0.originY else { return nil }
+      return NSPoint(x: x, y: y)
+    }
+    let size: NSSize? = persisted.flatMap {
+      guard let w = $0.width, let h = $0.height else { return nil }
+      return NSSize(width: w, height: h)
+    }
+    let isPinned = persisted?.isPinned ?? false
+
+    coordinator.markOpen(id: record.memoID)
+    let memo = MemoWindow(id: record.memoID, draft: draft)
+    let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: isPinned)
     openControllers[memo.id] = controller
     controller.showAndFocusEditor()
     lastCascadeOrigin = controller.currentFrame?.origin
@@ -43,6 +91,7 @@ final class WindowManager {
   private func makeController(
     for memo: MemoWindow,
     origin: NSPoint? = nil,
+    size: NSSize? = nil,
     initiallyPinned: Bool = false
   ) -> MemoWindowController {
     let resolvedOrigin = origin ?? makeNextWindowOrigin()
@@ -50,17 +99,31 @@ final class WindowManager {
     return MemoWindowController(
       memo: memo,
       origin: resolvedOrigin,
-      initiallyPinned: initiallyPinned
-    ) { [weak self] record in
-      self?.handleWindowClose(record: record)
-    }
+      size: size,
+      initiallyPinned: initiallyPinned,
+      onDraftChange: { [weak self] id, draft in
+        self?.scheduler.schedule(id: id, draft: draft)
+      },
+      onFlush: { [weak self] id, draft in
+        self?.scheduler.flush(id: id, draft: draft)
+      },
+      onPinChange: { [weak self] id, isPinned in
+        self?.coordinator.savePinned(id: id, isPinned: isPinned)
+      },
+      onClose: { [weak self] record in
+        self?.handleWindowClose(record: record)
+      }
+    )
   }
 
   private func handleWindowClose(record: ClosedMemoRecord) {
     openControllers.removeValue(forKey: record.memoID)
     closedMemoRecords.removeAll { $0.memoID == record.memoID }
     closedMemoRecords.append(record)
-    lastCascadeOrigin = record.origin ?? lastCascadeOrigin
+    lastCascadeOrigin = record.frame?.origin ?? lastCascadeOrigin
+    if !isTerminating {
+      coordinator.saveWindowState(id: record.memoID, frame: record.frame, isOpen: false)
+    }
     onClosedStackChanged?()
   }
 
