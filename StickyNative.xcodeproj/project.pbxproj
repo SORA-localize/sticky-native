@@ -24,6 +24,9 @@
 		BA0000000000000000000118 /* libsqlite3.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000019 /* libsqlite3.tbd */; };
 		BA0000000000000000000119 /* AutosaveScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000020 /* AutosaveScheduler.swift */; };
 		BA0000000000000000000120 /* PersistenceCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000021 /* PersistenceCoordinator.swift */; };
+		BA0000000000000000000121 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000022 /* HomeViewModel.swift */; };
+		BA0000000000000000000122 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000023 /* HomeView.swift */; };
+		BA0000000000000000000123 /* HomeWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000024 /* HomeWindowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +48,9 @@
 		BA0000000000000000000019 /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		BA0000000000000000000020 /* AutosaveScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutosaveScheduler.swift; sourceTree = "<group>"; };
 		BA0000000000000000000021 /* PersistenceCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceCoordinator.swift; sourceTree = "<group>"; };
+		BA0000000000000000000022 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		BA0000000000000000000023 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		BA0000000000000000000024 /* HomeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindowController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +95,9 @@
 				BA0000000000000000000018 /* SQLiteStore.swift */,
 				BA0000000000000000000020 /* AutosaveScheduler.swift */,
 				BA0000000000000000000021 /* PersistenceCoordinator.swift */,
+				BA0000000000000000000022 /* HomeViewModel.swift */,
+				BA0000000000000000000023 /* HomeView.swift */,
+				BA0000000000000000000024 /* HomeWindowController.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -183,6 +192,9 @@
 				BA0000000000000000000117 /* SQLiteStore.swift in Sources */,
 				BA0000000000000000000119 /* AutosaveScheduler.swift in Sources */,
 				BA0000000000000000000120 /* PersistenceCoordinator.swift in Sources */,
+				BA0000000000000000000121 /* HomeViewModel.swift in Sources */,
+				BA0000000000000000000122 /* HomeView.swift in Sources */,
+				BA0000000000000000000123 /* HomeWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -5,10 +5,12 @@ final class MenuBarController: NSObject {
   private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
   private let menu = NSMenu()
   private let newMemoItem = NSMenuItem(title: "New Memo", action: #selector(handleNewMemo), keyEquivalent: "")
+  private let allMemosItem = NSMenuItem(title: "All Memos", action: #selector(handleOpenHome), keyEquivalent: "")
   private let reopenItem = NSMenuItem(title: "Reopen Last Closed", action: #selector(handleReopen), keyEquivalent: "")
   private let quitItem = NSMenuItem(title: "Quit StickyNative", action: #selector(handleQuit), keyEquivalent: "")
 
   var onNewMemo: (() -> Void)?
+  var onOpenHome: (() -> Void)?
   var onReopenLastClosed: (() -> Void)?
 
   override init() {
@@ -20,11 +22,14 @@ final class MenuBarController: NSObject {
     }
 
     newMemoItem.target = self
+    allMemosItem.target = self
     reopenItem.target = self
     quitItem.target = self
 
+    menu.autoenablesItems = false
     menu.items = [
       newMemoItem,
+      allMemosItem,
       reopenItem,
       NSMenuItem.separator(),
       quitItem,
@@ -40,6 +45,10 @@ final class MenuBarController: NSObject {
 
   @objc private func handleNewMemo() {
     onNewMemo?()
+  }
+
+  @objc private func handleOpenHome() {
+    onOpenHome?()
   }
 
   @objc private func handleReopen() {

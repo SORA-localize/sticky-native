@@ -10,6 +10,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   private let onDraftChange: (UUID, String) -> Void
   private let onFlush: (UUID, String) -> Void
   private let onPinChange: (UUID, Bool) -> Void
+  private let onTrash: (UUID) -> Void
   private let uiState: MemoWindowUIState
   private var hostingView: SeamlessHostingView<MemoWindowView>?
   private var draftCancellable: AnyCancellable?
@@ -22,6 +23,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     onDraftChange: @escaping (UUID, String) -> Void,
     onFlush: @escaping (UUID, String) -> Void,
     onPinChange: @escaping (UUID, Bool) -> Void,
+    onTrash: @escaping (UUID) -> Void,
     onClose: @escaping (ClosedMemoRecord) -> Void
   ) {
     self.memo = memo
@@ -29,6 +31,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     self.onDraftChange = onDraftChange
     self.onFlush = onFlush
     self.onPinChange = onPinChange
+    self.onTrash = onTrash
     self.uiState = MemoWindowUIState(isPinned: initiallyPinned)
 
     let window = SeamlessWindow(
@@ -113,6 +116,10 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       onPinToggle: { [weak self] in
         guard let self else { return }
         pinWindow(!uiState.isPinned)
+      },
+      onTrash: { [weak self] in
+        guard let self else { return }
+        onTrash(memo.id)
       },
       onClose: { [weak self] in
         self?.window?.performClose(nil)

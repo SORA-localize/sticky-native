@@ -4,6 +4,7 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
   private let hotkeyManager = HotkeyManager()
   private var windowManager: WindowManager!
+  private var homeWindowController: HomeWindowController!
   private let menuBarController = MenuBarController()
 
   func applicationDidFinishLaunching(_ notification: Notification) {
@@ -12,10 +13,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     guard let store = try? SQLiteStore() else {
       fatalError("Failed to open SQLite store")
     }
-    windowManager = WindowManager(coordinator: PersistenceCoordinator(store: store))
+    let coordinator = PersistenceCoordinator(store: store)
+    windowManager = WindowManager(coordinator: coordinator)
+    homeWindowController = HomeWindowController(coordinator: coordinator)
+
+    homeWindowController.onOpenMemo = { [weak self] id in
+      self?.windowManager.openMemo(id: id)
+    }
+    homeWindowController.onTrashMemo = { [weak self] id in
+      self?.windowManager.trashMemo(id: id)
+    }
+    homeWindowController.onRestoreMemo = { [weak self] id in
+      self?.windowManager.restoreMemo(id: id)
+    }
+    homeWindowController.onEmptyTrash = { [weak self] in
+      self?.windowManager.emptyTrash()
+    }
 
     menuBarController.onNewMemo = { [weak self] in
       self?.windowManager.createNewMemoWindow()
+    }
+    menuBarController.onOpenHome = { [weak self] in
+      self?.homeWindowController.show()
     }
     menuBarController.onReopenLastClosed = { [weak self] in
       self?.windowManager.reopenLastClosedMemo()
@@ -24,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     windowManager.onClosedStackChanged = { [weak self] in
       guard let self else { return }
       menuBarController.update(canReopen: windowManager.canReopenClosedMemo)
+      homeWindowController.viewModel.reload()
     }
     menuBarController.update(canReopen: windowManager.canReopenClosedMemo)
 

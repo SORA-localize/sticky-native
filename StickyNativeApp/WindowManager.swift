@@ -17,6 +17,7 @@ final class WindowManager {
 
   var onClosedStackChanged: (() -> Void)?
   private var isTerminating = false
+  private var trashedMemoIDs: Set<UUID> = []
 
   init(coordinator: PersistenceCoordinator) {
     self.coordinator = coordinator
@@ -27,6 +28,47 @@ final class WindowManager {
 
   var canReopenClosedMemo: Bool {
     !closedMemoRecords.isEmpty
+  }
+
+  func openMemo(id: UUID) {
+    if let controller = openControllers[id] {
+      controller.showAndFocusEditor()
+      return
+    }
+    closedMemoRecords.removeAll { $0.memoID == id }
+    guard let persisted = coordinator.fetchMemo(id: id) else { return }
+    let origin: NSPoint? = persisted.originX.flatMap { x in
+      persisted.originY.map { y in NSPoint(x: x, y: y) }
+    }
+    let size: NSSize? = persisted.width.flatMap { w in
+      persisted.height.map { h in NSSize(width: w, height: h) }
+    }
+    coordinator.markOpen(id: id)
+    let memo = MemoWindow(id: id, draft: persisted.draft)
+    let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
+    openControllers[id] = controller
+    controller.showAndFocusEditor()
+    lastCascadeOrigin = controller.currentFrame?.origin
+    onClosedStackChanged?()
+  }
+
+  func trashMemo(id: UUID) {
+    if openControllers[id] != nil {
+      trashedMemoIDs.insert(id)
+      openControllers[id]?.window?.performClose(nil)
+    } else {
+      closedMemoRecords.removeAll { $0.memoID == id }
+      coordinator.trashMemo(id: id)
+      onClosedStackChanged?()
+    }
+  }
+
+  func restoreMemo(id: UUID) {
+    coordinator.restoreMemo(id: id)
+  }
+
+  func emptyTrash() {
+    coordinator.emptyTrash()
   }
 
   func restorePersistedOpenMemos() {
@@ -110,6 +152,9 @@ final class WindowManager {
       onPinChange: { [weak self] id, isPinned in
         self?.coordinator.savePinned(id: id, isPinned: isPinned)
       },
+      onTrash: { [weak self] id in
+        self?.trashMemo(id: id)
+      },
       onClose: { [weak self] record in
         self?.handleWindowClose(record: record)
       }
@@ -118,12 +163,20 @@ final class WindowManager {
 
   private func handleWindowClose(record: ClosedMemoRecord) {
     openControllers.removeValue(forKey: record.memoID)
-    closedMemoRecords.removeAll { $0.memoID == record.memoID }
-    closedMemoRecords.append(record)
-    lastCascadeOrigin = record.frame?.origin ?? lastCascadeOrigin
-    if !isTerminating {
-      coordinator.saveWindowState(id: record.memoID, frame: record.frame, isOpen: false)
+
+    if trashedMemoIDs.contains(record.memoID) {
+      trashedMemoIDs.remove(record.memoID)
+      closedMemoRecords.removeAll { $0.memoID == record.memoID }
+      coordinator.trashMemo(id: record.memoID)
+    } else {
+      closedMemoRecords.removeAll { $0.memoID == record.memoID }
+      closedMemoRecords.append(record)
+      lastCascadeOrigin = record.frame?.origin ?? lastCascadeOrigin
+      if !isTerminating {
+        coordinator.saveWindowState(id: record.memoID, frame: record.frame, isOpen: false)
+      }
     }
+
     onClosedStackChanged?()
   }
 

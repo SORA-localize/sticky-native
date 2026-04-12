@@ -9,7 +9,15 @@ final class PersistenceCoordinator {
   }
 
   func saveDraft(id: UUID, draft: String) {
-    try? store.upsertDraft(id: id, draft: draft)
+    let title = Self.generateTitle(from: draft)
+    try? store.upsertDraft(id: id, draft: draft, title: title)
+  }
+
+  static func generateTitle(from draft: String) -> String {
+    let firstLine = draft
+      .components(separatedBy: "\n")
+      .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? ""
+    return String(firstLine.trimmingCharacters(in: .whitespaces).prefix(50))
   }
 
   func saveWindowState(id: UUID, frame: NSRect?, isOpen: Bool) {
@@ -29,6 +37,26 @@ final class PersistenceCoordinator {
 
   func markOpen(id: UUID) {
     try? store.markOpen(id: id)
+  }
+
+  func trashMemo(id: UUID) {
+    try? store.trash(id: id)
+  }
+
+  func restoreMemo(id: UUID) {
+    try? store.restore(id: id)
+  }
+
+  func emptyTrash() {
+    try? store.emptyTrash()
+  }
+
+  func fetchAllMemos() -> [PersistedMemo] {
+    (try? store.fetchAll()) ?? []
+  }
+
+  func fetchTrashedMemos() -> [PersistedMemo] {
+    (try? store.fetchTrashed()) ?? []
   }
 
   func fetchDraft(id: UUID) -> String? {

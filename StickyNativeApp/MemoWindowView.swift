@@ -4,12 +4,14 @@ import SwiftUI
 struct MemoWindowView: View {
   private enum HoveredControl {
     case pin
+    case trash
     case close
   }
 
   @ObservedObject var memo: MemoWindow
   @ObservedObject var uiState: MemoWindowUIState
   let onPinToggle: () -> Void
+  let onTrash: () -> Void
   let onClose: () -> Void
 
   @State private var hoveredControl: HoveredControl?
@@ -45,6 +47,20 @@ struct MemoWindowView: View {
           hoveredControl = isHovered ? .pin : (hoveredControl == .pin ? nil : hoveredControl)
         }
 
+        Button(action: onTrash) {
+          Image(systemName: "trash")
+            .font(.system(size: 11, weight: .semibold))
+            .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(hoveredControl == .trash ? Color.red.opacity(0.85) : Color.primary.opacity(0.55))
+        .background(hoveredControl == .trash ? Color.red.opacity(0.15) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .scaleEffect(hoveredControl == .trash ? 1.04 : 1.0)
+        .onHover { isHovered in
+          hoveredControl = isHovered ? .trash : (hoveredControl == .trash ? nil : hoveredControl)
+        }
+
         Button(action: onClose) {
           Image(systemName: "xmark")
             .font(.system(size: 11, weight: .bold))
@@ -63,22 +79,6 @@ struct MemoWindowView: View {
       .padding(.horizontal, 16)
       .padding(.top, 14)
       .padding(.bottom, 12)
-
-      Divider()
-
-      HStack {
-        Text(uiState.isPinned ? "Pinned" : "Unpinned")
-          .font(.system(size: 11, weight: .medium))
-          .foregroundStyle(.secondary)
-
-        Spacer()
-
-        Text("Phase 2")
-          .font(.system(size: 11, weight: .medium))
-          .foregroundStyle(.secondary)
-      }
-      .padding(.horizontal, 16)
-      .padding(.vertical, 10)
 
       MemoEditorView(memo: memo, uiState: uiState)
         .padding(.horizontal, 12)
