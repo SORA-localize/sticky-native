@@ -71,6 +71,93 @@
 - app 再起動をまたぐ draft 保持
 - Home / Trash / Settings
 
+## 技術詳細確認
+
+### ファイル責務
+
+- `AppDelegate.swift`
+  - app 起動時の配線だけを持つ
+  - `MenuBarController`, `HotkeyManager`, `WindowManager` を接続する
+- `MenuBarController.swift`
+  - status item と menu 項目を管理する
+  - `New Memo`, `Reopen Last Closed`, `Quit` の入口だけを持つ
+- `HotkeyManager.swift`
+  - `Cmd+Option+Enter` の登録と解除だけを持つ
+  - window 生成ロジックは持たない
+- `WindowManager.swift`
+  - open 中 window の参照管理
+  - close 後の in-memory reopen 対象の管理
+  - create / focus / close / reopen の起点
+- `MemoWindow.swift`
+  - memo 単位の最小モデル
+  - Phase 2 では `id`, `draft`, `createdAt` まで
+- `MemoWindowController.swift`
+  - `NSWindow` と `MemoWindowView` の橋渡し
+  - pin / close / focus / level 制御
+- `MemoWindowView.swift`
+  - window chrome, drag handle, pin / close ボタンの UI
+- `MemoEditorView.swift`
+  - editor 本体と focus の UI 責務
+- `SeamlessWindow.swift`
+  - `canBecomeKey` / `canBecomeMain`
+- `SeamlessHostingView.swift`
+  - `acceptsFirstMouse`
+
+### データ境界
+
+- Phase 2 でメモリに保持するもの
+  - `MemoWindow` の `id`
+  - open 中 `NSWindowController` の参照
+  - close 済み memo の reopen 用識別子
+- Phase 2 でまだ保持しないもの
+  - 永続 draft
+  - 永続 frame
+  - relaunch 後 reopen のための状態
+  - Home / Trash 向け管理メタデータ
+
+### イベント経路
+
+- `Cmd+Option+Enter`
+  - `HotkeyManager`
+  - `WindowManager.createNewMemoWindow()`
+  - `MemoWindowController.showAndFocusEditor()`
+- menu bar `New Memo`
+  - `MenuBarController`
+  - `WindowManager.createNewMemoWindow()`
+- menu bar `Reopen Last Closed`
+  - `MenuBarController`
+  - `WindowManager.reopenLastClosedMemo()`
+- pin toggle
+  - `MemoWindowView`
+  - `MemoWindowController.pinWindow(_:)`
+  - `NSWindow.level`
+- close
+  - `MemoWindowView`
+  - `MemoWindowController`
+  - `WindowManager.handleWindowClose`
+
+### drag 領域ルール
+
+- drag は window 全面ではなく、`MemoWindowView` 内の専用 drag handle に限定する
+- pin / close ボタン領域は drag 不可
+- editor 領域は drag 不可
+- `isMovableByWindowBackground = false` を維持し、ドラッグは明示的な handle でのみ行う
+
+### 状態遷移
+
+- 新規作成
+  - `WindowManager` が `MemoWindow` を生成
+  - controller を open 管理へ追加
+  - window を前面化して入力開始
+- close
+  - controller を open 管理から除外
+  - memo の識別子だけを closed stack に積む
+- reopen
+  - closed stack から識別子を取り出す
+  - 新しい controller を作り直して前面化する
+- pin
+  - `NSWindow.level` を `.floating` / `.normal` で切り替える
+
 ## 修正フェーズ
 
 ### Phase 2-1: App Shell Reset
@@ -146,3 +233,4 @@ Gate:
 - 2026-04-12: Phase 1 probe 結果を受けて初版作成
 - 2026-04-12: probe 削除方針、drag 操作領域、実機確認手順を明確化
 - 2026-04-12: `HotkeyManager` の既存ファイル扱いを明記し、reopen のメモリ境界を定義
+- 2026-04-12: ファイル責務、データ境界、イベント経路、drag ルールを追記
