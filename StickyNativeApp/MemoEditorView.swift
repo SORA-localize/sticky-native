@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MemoEditorView: View {
   @ObservedObject var memo: MemoWindow
-  let focusToken: UUID
+  @ObservedObject var uiState: MemoWindowUIState
 
   @FocusState private var isEditorFocused: Bool
 
@@ -19,7 +19,7 @@ struct MemoEditorView: View {
       .onAppear {
         focusEditor()
       }
-      .onChange(of: focusToken) { _, _ in
+      .onChange(of: uiState.focusToken) { _, _ in
         focusEditor()
       }
   }

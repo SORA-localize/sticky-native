@@ -18,6 +18,7 @@
 		BA0000000000000000000112 /* MemoWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000013 /* MemoWindowController.swift */; };
 		BA0000000000000000000113 /* WindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000014 /* WindowManager.swift */; };
 		BA0000000000000000000114 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000015 /* MenuBarController.swift */; };
+		BA0000000000000000000115 /* MemoWindowUIState.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000016 /* MemoWindowUIState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -33,6 +34,7 @@
 		BA0000000000000000000013 /* MemoWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000014 /* WindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowManager.swift; sourceTree = "<group>"; };
 		BA0000000000000000000015 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
+		BA0000000000000000000016 /* MemoWindowUIState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoWindowUIState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +72,7 @@
 				BA0000000000000000000013 /* MemoWindowController.swift */,
 				BA0000000000000000000014 /* WindowManager.swift */,
 				BA0000000000000000000015 /* MenuBarController.swift */,
+				BA0000000000000000000016 /* MemoWindowUIState.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -159,6 +162,7 @@
 				BA0000000000000000000112 /* MemoWindowController.swift in Sources */,
 				BA0000000000000000000113 /* WindowManager.swift in Sources */,
 				BA0000000000000000000114 /* MenuBarController.swift in Sources */,
+				BA0000000000000000000115 /* MemoWindowUIState.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

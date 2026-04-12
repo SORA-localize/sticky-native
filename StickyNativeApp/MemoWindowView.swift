@@ -8,8 +8,7 @@ struct MemoWindowView: View {
   }
 
   @ObservedObject var memo: MemoWindow
-  let focusToken: UUID
-  let isPinned: Bool
+  @ObservedObject var uiState: MemoWindowUIState
   let onPinToggle: () -> Void
   let onClose: () -> Void
 
@@ -33,7 +32,7 @@ struct MemoWindowView: View {
           .frame(height: 30)
 
         Button(action: onPinToggle) {
-          Image(systemName: isPinned ? "pin.fill" : "pin")
+          Image(systemName: uiState.isPinned ? "pin.fill" : "pin")
             .font(.system(size: 12, weight: .semibold))
             .frame(width: 28, height: 28)
         }
@@ -68,7 +67,7 @@ struct MemoWindowView: View {
       Divider()
 
       HStack {
-        Text(isPinned ? "Pinned" : "Unpinned")
+        Text(uiState.isPinned ? "Pinned" : "Unpinned")
           .font(.system(size: 11, weight: .medium))
           .foregroundStyle(.secondary)
 
@@ -81,7 +80,7 @@ struct MemoWindowView: View {
       .padding(.horizontal, 16)
       .padding(.vertical, 10)
 
-      MemoEditorView(memo: memo, focusToken: focusToken)
+      MemoEditorView(memo: memo, uiState: uiState)
         .padding(.horizontal, 12)
         .padding(.bottom, 12)
     }
@@ -96,7 +95,7 @@ struct MemoWindowView: View {
   }
 
   private var pinBackgroundColor: Color {
-    if isPinned {
+    if uiState.isPinned {
       return Color.white.opacity(hoveredControl == .pin ? 0.38 : 0.30)
     }
 

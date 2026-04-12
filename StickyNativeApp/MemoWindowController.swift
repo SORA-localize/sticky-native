@@ -6,8 +6,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   let memo: MemoWindow
 
   private let onClose: (ClosedMemoRecord) -> Void
-  private var isPinned: Bool
-  private var focusToken = UUID()
+  private let uiState: MemoWindowUIState
   private var hostingView: SeamlessHostingView<MemoWindowView>?
 
   init(
@@ -18,7 +17,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   ) {
     self.memo = memo
     self.onClose = onClose
-    self.isPinned = initiallyPinned
+    self.uiState = MemoWindowUIState(isPinned: initiallyPinned)
 
     let window = SeamlessWindow(
       contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
@@ -66,9 +65,8 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func pinWindow(_ pinned: Bool) {
-    isPinned = pinned
+    uiState.isPinned = pinned
     applyPinState()
-    refreshRootView()
   }
 
   func windowWillClose(_ notification: Notification) {
@@ -76,7 +74,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       ClosedMemoRecord(
         memoID: memo.id,
         origin: window?.frame.origin,
-        isPinned: isPinned
+        isPinned: uiState.isPinned
       )
     )
   }
@@ -86,17 +84,16 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   var pinnedState: Bool {
-    isPinned
+    uiState.isPinned
   }
 
   private func makeRootView() -> MemoWindowView {
     MemoWindowView(
       memo: memo,
-      focusToken: focusToken,
-      isPinned: isPinned,
+      uiState: uiState,
       onPinToggle: { [weak self] in
         guard let self else { return }
-        pinWindow(!isPinned)
+        pinWindow(!uiState.isPinned)
       },
       onClose: { [weak self] in
         self?.window?.performClose(nil)
@@ -104,16 +101,11 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     )
   }
 
-  private func refreshRootView() {
-    hostingView?.rootView = makeRootView()
-  }
-
   private func applyPinState() {
-    window?.level = isPinned ? .floating : .normal
+    window?.level = uiState.isPinned ? .floating : .normal
   }
 
   private func requestEditorFocus() {
-    focusToken = UUID()
-    refreshRootView()
+    uiState.requestEditorFocus()
   }
 }
