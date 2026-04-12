@@ -190,6 +190,8 @@ Gate:
 
 Gate:
 - close / reopen 後に frame と pin 状態が復元される
+
+コードレビュー Gate:
 - Phase 2 の in-memory reopen が DB state を基準にした reopen へ置き換わる
 
 ### Phase 3-4: Relaunch Restore
@@ -204,6 +206,9 @@ Gate:
 
 - draft が close / reopen をまたいで失われない
 - app 再起動後も reopen が成立する
+
+## コードレビュー Gate
+
 - frame / pin / open state の保存経路が `WindowManager -> PersistenceCoordinator -> SQLiteStore` に一本化される
 - in-memory reopen が DB reopen に置き換わり、二重の reopen 経路が残らない
 
@@ -228,3 +233,4 @@ Gate:
 
 - 2026-04-12: 初版作成
 - 2026-04-12: autosave 経路、DB reopen 切替、ファイル逸脱理由を明確化
+- 2026-04-12: 実機 Gate とコードレビュー Gate を分離
