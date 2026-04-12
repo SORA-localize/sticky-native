@@ -23,6 +23,7 @@
 - `StickyNativeApp/MemoWindow.swift`
 - `StickyNativeApp/MemoWindowController.swift`
 - `StickyNativeApp/MemoWindowView.swift`
+- `StickyNativeApp/MemoEditorView.swift`
 - `StickyNativeApp/WindowManager.swift`
 - `StickyNativeApp/MenuBarController.swift`
 
@@ -31,7 +32,9 @@
 - `StickyNativeApp/ProbeEditorView.swift`
 
 補足:
-- Phase 2 では新規ファイルを 5 つ想定する
+- `MemoWindowView.swift` は window chrome と drag 領域の責務を持つ
+- `MemoEditorView.swift` は editor 本体の入力責務を持つ
+- Phase 2 では新規ファイルを 6 つ想定する
 - planning guideline の原則 2 以内は超えるが、probe から本実装へ責務分離するために必要な分割として許容する
 - これ以上増やす場合は先に計画文書を更新する
 
@@ -41,7 +44,6 @@
 - `W-01`: `1 memo = 1 window` を扱う window lifecycle が未分離
 - `W-02`: pin / close / reopen の責務が probe UI に留まっている
 - `W-03`: drag の操作領域設計が未確定で、ボタン操作と競合する危険がある
-- `U-01`: drag と操作ボタンの責務分離が未整理
 - `K-01`: probe 専用コードが本実装へ混入する危険がある
 
 ## 目的
@@ -85,7 +87,8 @@ Gate:
 - memo ごとの window create / focus / close を管理する責務を分離する
 
 Gate:
-- 新規 window を複数生成しても責務が崩れない
+- `WindowManager` が複数 window を保持できる
+- 指定した memo に対して意図した window が生成 / 再前面化される
 
 ### Phase 2-3: Window Controls
 
