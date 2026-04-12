@@ -67,10 +67,6 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     onClose(memo.id)
   }
 
-  func windowDidBecomeKey(_ notification: Notification) {
-    requestEditorFocus()
-  }
-
   var currentFrame: NSRect? {
     window?.frame
   }
