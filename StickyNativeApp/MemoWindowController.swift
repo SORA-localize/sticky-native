@@ -5,14 +5,20 @@ import SwiftUI
 final class MemoWindowController: NSWindowController, NSWindowDelegate {
   let memo: MemoWindow
 
-  private let onClose: (UUID) -> Void
-  private var isPinned = false
+  private let onClose: (ClosedMemoRecord) -> Void
+  private var isPinned: Bool
   private var focusToken = UUID()
   private var hostingView: SeamlessHostingView<MemoWindowView>?
 
-  init(memo: MemoWindow, origin: NSPoint?, onClose: @escaping (UUID) -> Void) {
+  init(
+    memo: MemoWindow,
+    origin: NSPoint?,
+    initiallyPinned: Bool = false,
+    onClose: @escaping (ClosedMemoRecord) -> Void
+  ) {
     self.memo = memo
     self.onClose = onClose
+    self.isPinned = initiallyPinned
 
     let window = SeamlessWindow(
       contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
@@ -43,6 +49,8 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     } else {
       window.center()
     }
+
+    applyPinState()
   }
 
   @available(*, unavailable)
@@ -64,11 +72,21 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
-    onClose(memo.id)
+    onClose(
+      ClosedMemoRecord(
+        memoID: memo.id,
+        origin: window?.frame.origin,
+        isPinned: isPinned
+      )
+    )
   }
 
   var currentFrame: NSRect? {
     window?.frame
+  }
+
+  var pinnedState: Bool {
+    isPinned
   }
 
   private func makeRootView() -> MemoWindowView {

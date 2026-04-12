@@ -1,16 +1,22 @@
 import Foundation
 
+struct ClosedMemoRecord {
+  let memoID: UUID
+  let origin: NSPoint?
+  let isPinned: Bool
+}
+
 @MainActor
 final class WindowManager {
   private let cascadeStep = NSSize(width: 28, height: 24)
   private var openControllers: [UUID: MemoWindowController] = [:]
-  private var closedMemoIDs: [UUID] = []
+  private var closedMemoRecords: [ClosedMemoRecord] = []
   private var lastCascadeOrigin: NSPoint?
 
   var onClosedStackChanged: (() -> Void)?
 
   var canReopenClosedMemo: Bool {
-    !closedMemoIDs.isEmpty
+    !closedMemoRecords.isEmpty
   }
 
   func createNewMemoWindow() {
@@ -22,30 +28,39 @@ final class WindowManager {
   }
 
   func reopenLastClosedMemo() {
-    guard let memoID = closedMemoIDs.popLast() else {
+    guard let record = closedMemoRecords.popLast() else {
       return
     }
 
-    let memo = MemoWindow(id: memoID)
-    let controller = makeController(for: memo)
+    let memo = MemoWindow(id: record.memoID)
+    let controller = makeController(for: memo, origin: record.origin, initiallyPinned: record.isPinned)
     openControllers[memo.id] = controller
     controller.showAndFocusEditor()
     lastCascadeOrigin = controller.currentFrame?.origin
     onClosedStackChanged?()
   }
 
-  private func makeController(for memo: MemoWindow) -> MemoWindowController {
-    let nextOrigin = makeNextWindowOrigin()
+  private func makeController(
+    for memo: MemoWindow,
+    origin: NSPoint? = nil,
+    initiallyPinned: Bool = false
+  ) -> MemoWindowController {
+    let resolvedOrigin = origin ?? makeNextWindowOrigin()
 
-    return MemoWindowController(memo: memo, origin: nextOrigin) { [weak self] memoID in
-      self?.handleWindowClose(memoID: memoID)
+    return MemoWindowController(
+      memo: memo,
+      origin: resolvedOrigin,
+      initiallyPinned: initiallyPinned
+    ) { [weak self] record in
+      self?.handleWindowClose(record: record)
     }
   }
 
-  private func handleWindowClose(memoID: UUID) {
-    openControllers.removeValue(forKey: memoID)
-    closedMemoIDs.removeAll { $0 == memoID }
-    closedMemoIDs.append(memoID)
+  private func handleWindowClose(record: ClosedMemoRecord) {
+    openControllers.removeValue(forKey: record.memoID)
+    closedMemoRecords.removeAll { $0.memoID == record.memoID }
+    closedMemoRecords.append(record)
+    lastCascadeOrigin = record.origin ?? lastCascadeOrigin
     onClosedStackChanged?()
   }
 

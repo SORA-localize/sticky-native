@@ -108,7 +108,10 @@
 - Phase 2 でメモリに保持するもの
   - `MemoWindow` の `id`
   - open 中 `NSWindowController` の参照
-  - close 済み memo の reopen 用識別子
+  - close 済み memo の reopen 用メタデータ
+    - `memo id`
+    - 最後に閉じたときの window origin
+    - 最後に閉じたときの pin 状態
 - Phase 2 でまだ保持しないもの
   - 永続 draft
   - 永続 frame
@@ -135,6 +138,7 @@
   - `MemoWindowView`
   - `MemoWindowController`
   - `WindowManager.handleWindowClose`
+  - `ClosedMemoRecord` を stack に積む
 
 ### drag 領域ルール
 
@@ -151,10 +155,10 @@
   - window を前面化して入力開始
 - close
   - controller を open 管理から除外
-  - memo の識別子だけを closed stack に積む
+  - reopen に必要な最小メタデータを closed stack に積む
 - reopen
-  - closed stack から識別子を取り出す
-  - 新しい controller を作り直して前面化する
+  - closed stack から直近 record を取り出す
+  - origin と pin 状態を引き継いだ controller を作り直して前面化する
 - pin
   - `NSWindow.level` を `.floating` / `.normal` で切り替える
 
@@ -195,7 +199,7 @@ Gate:
 補足:
 - Phase 2 の reopen は app 内メモリにある window 管理情報だけを対象とする
 - draft 内容や永続 frame は保持対象に含めない
-- reopen 対象として持つのは memo の識別子、window の存在状態、必要最小限の再前面化情報に限定する
+- reopen 対象として持つのは memo の識別子、最後の origin、pin 状態までに限定する
 
 Gate:
 - close 後も app 内で 1 click reopen が成立する
