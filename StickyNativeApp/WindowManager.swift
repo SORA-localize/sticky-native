@@ -2,6 +2,7 @@ import Foundation
 
 @MainActor
 final class WindowManager {
+  private let cascadeStep = NSSize(width: 28, height: 24)
   private var openControllers: [UUID: MemoWindowController] = [:]
   private var closedMemoIDs: [UUID] = []
 
@@ -31,7 +32,9 @@ final class WindowManager {
   }
 
   private func makeController(for memo: MemoWindow) -> MemoWindowController {
-    MemoWindowController(memo: memo) { [weak self] memoID in
+    let nextOrigin = makeNextWindowOrigin()
+
+    return MemoWindowController(memo: memo, origin: nextOrigin) { [weak self] memoID in
       self?.handleWindowClose(memoID: memoID)
     }
   }
@@ -41,5 +44,21 @@ final class WindowManager {
     closedMemoIDs.removeAll { $0 == memoID }
     closedMemoIDs.append(memoID)
     onClosedStackChanged?()
+  }
+
+  private func makeNextWindowOrigin() -> NSPoint? {
+    guard
+      let currentFrame = openControllers.values
+        .compactMap(\.currentFrame)
+        .sorted(by: { $0.origin.y < $1.origin.y })
+        .last
+    else {
+      return nil
+    }
+
+    return NSPoint(
+      x: currentFrame.origin.x + cascadeStep.width,
+      y: currentFrame.origin.y - cascadeStep.height
+    )
   }
 }

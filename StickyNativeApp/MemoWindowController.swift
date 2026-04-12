@@ -10,7 +10,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   private var focusToken = UUID()
   private var hostingView: SeamlessHostingView<MemoWindowView>?
 
-  init(memo: MemoWindow, onClose: @escaping (UUID) -> Void) {
+  init(memo: MemoWindow, origin: NSPoint?, onClose: @escaping (UUID) -> Void) {
     self.memo = memo
     self.onClose = onClose
 
@@ -36,8 +36,13 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     window.isOpaque = false
     window.backgroundColor = .clear
     window.hasShadow = true
-    window.center()
     window.setFrameAutosaveName("MemoWindow-\(memo.id.uuidString)")
+
+    if let origin {
+      window.setFrameOrigin(origin)
+    } else {
+      window.center()
+    }
   }
 
   @available(*, unavailable)
@@ -46,8 +51,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func showAndFocusEditor() {
-    focusToken = UUID()
-    refreshRootView()
+    requestEditorFocus()
     showWindow(nil)
     window?.makeKeyAndOrderFront(nil)
     NSApp.activate(ignoringOtherApps: true)
@@ -61,6 +65,14 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
   func windowWillClose(_ notification: Notification) {
     onClose(memo.id)
+  }
+
+  func windowDidBecomeKey(_ notification: Notification) {
+    requestEditorFocus()
+  }
+
+  var currentFrame: NSRect? {
+    window?.frame
   }
 
   private func makeRootView() -> MemoWindowView {
@@ -84,5 +96,10 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
   private func applyPinState() {
     window?.level = isPinned ? .floating : .normal
+  }
+
+  private func requestEditorFocus() {
+    focusToken = UUID()
+    refreshRootView()
   }
 }
