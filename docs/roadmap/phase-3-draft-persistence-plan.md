@@ -29,8 +29,10 @@
 - `StickyNativeApp/AutosaveScheduler.swift`
 
 補足:
-- `SQLiteStore.swift`, `PersistenceModels.swift`, `PersistenceCoordinator.swift`, `AutosaveScheduler.swift` は新規作成候補
+- `SQLiteStore.swift`, `PersistenceModels.swift`, `PersistenceCoordinator.swift`, `AutosaveScheduler.swift` は Phase 3 で新規作成する
 - `WindowManager.swift` は persistence に依存しすぎないよう、読み書きの窓口だけを持つ
+- Phase 3 では新規ファイルを 4 つ想定する
+- planning guideline の原則 2 以内は超えるが、SQLite 層と autosave 層を `WindowManager` / `View` から分離するために必要な分割として許容する
 - これ以上ファイルが増える場合は、実装前に本計画を更新する
 
 ## 問題一覧
@@ -125,6 +127,8 @@
   - `WindowManager.restorePersistedOpenMemos()`
 - draft change
   - `MemoEditorView`
+  - `MemoWindowController`
+  - `WindowManager`
   - `AutosaveScheduler`
   - `PersistenceCoordinator.saveDraft`
 - pin change
@@ -146,13 +150,15 @@
 - 最小 debounce を入れる
 - close 時は pending save を flush する
 - app terminate 時も flush を試みる
+- `AutosaveScheduler` は global ではなく memo ごとの pending task を `memo id` 単位で管理する
+- `View` は scheduler を直接持たず、controller / manager 経由で保存要求を送る
 
 ### reopen ルール
 
 - close 後 reopen
-  - DB 保存済み state を基準に reopen する
+  - `Phase 3-3` で Phase 2 の in-memory reopen を DB 保存 state ベースへ切り替える
 - relaunch 後 reopen
-  - `is_open = true` の memo を復元対象にする
+  - `Phase 3-4` で `is_open = true` の memo を復元対象にする
 - close した memo は `is_open = false` とする
 - reopen 時は直前の frame と pin 状態を優先して復元する
 
@@ -166,6 +172,7 @@
 Gate:
 - app 起動時に DB 初期化が成功する
 - memo table が自動作成される
+- 旧 `Phase 1 SQLite` 前提の local 文書が current roadmap と矛盾しない
 
 ### Phase 3-2: Draft Save Path
 
@@ -183,6 +190,7 @@ Gate:
 
 Gate:
 - close / reopen 後に frame と pin 状態が復元される
+- Phase 2 の in-memory reopen が DB state を基準にした reopen へ置き換わる
 
 ### Phase 3-4: Relaunch Restore
 
@@ -196,9 +204,8 @@ Gate:
 
 - draft が close / reopen をまたいで失われない
 - app 再起動後も reopen が成立する
-- frame / pin / open state が二重管理されない
-- autosave が UI 操作感を壊さない
-- SQLite 導入で seamless UX の操作感を壊していない
+- frame / pin / open state の保存経路が `WindowManager -> PersistenceCoordinator -> SQLiteStore` に一本化される
+- in-memory reopen が DB reopen に置き換わり、二重の reopen 経路が残らない
 
 ## 回帰 / 副作用チェック
 
@@ -215,7 +222,9 @@ Gate:
 3. app を終了して再起動したとき、open 状態だった memo が復元されるか
 4. app を終了する直前に入力した文字が失われないか
 5. autosave 導入後も pin / close / drag の操作感が重くなっていないか
+6. SQLite 導入後も `Cmd+Option+Enter` 直後に入力開始できるか
 
 ## 変更履歴
 
 - 2026-04-12: 初版作成
+- 2026-04-12: autosave 経路、DB reopen 切替、ファイル逸脱理由を明確化
