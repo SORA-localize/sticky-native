@@ -1,6 +1,6 @@
 # Technical Decision
 
-最終更新: 2026-04-11
+最終更新: 2026-04-12
 
 ## 採用
 
@@ -12,7 +12,7 @@
 
 - `1 memo = 1 window` の自然な制御が最優先だから
 - menu bar と global shortcut は AppKit 側で責務を分けた方が素直だから
-- 再起動をまたぐ draft 保持が Phase 1 条件に入ったため、最小 SQLite を先行投入した方が境界が明快だから
+- window core を先に固め、永続化は `Phase 3` へ分離した方が責務境界が明快だから
 - seamless UX のため、window/view の基盤は AppKit 拡張を前提にした方が良いから
 
 ## 実装境界
@@ -27,5 +27,5 @@
   - `SeamlessWindow`
   - `SeamlessHostingView`
 - SQLite:
-  - memo draft のローカル保存
-  - reopen 用メタデータ保持
+  - `Phase 3` 以降の memo draft ローカル保存
+  - `Phase 3` 以降の reopen 用メタデータ保持
