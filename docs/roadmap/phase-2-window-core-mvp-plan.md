@@ -32,6 +32,7 @@
 - `StickyNativeApp/ProbeEditorView.swift`
 
 補足:
+- `HotkeyManager.swift` は Phase 1 で作成済みの既存ファイルであり、Phase 2 では再利用と責務整理の対象とする
 - `MemoWindowView.swift` は window chrome と drag 領域の責務を持つ
 - `MemoEditorView.swift` は editor 本体の入力責務を持つ
 - Phase 2 では新規ファイルを 6 つ想定する
@@ -103,6 +104,11 @@ Gate:
 
 目的:
 - menu bar から直近 window を reopen できる最小導線を付ける
+
+補足:
+- Phase 2 の reopen は app 内メモリにある window 管理情報だけを対象とする
+- draft 内容や永続 frame は保持対象に含めない
+- reopen 対象として持つのは memo の識別子、window の存在状態、必要最小限の再前面化情報に限定する
 
 Gate:
 - close 後も app 内で 1 click reopen が成立する
