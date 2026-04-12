@@ -12,6 +12,7 @@
 		BA0000000000000000000103 /* SeamlessWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000003 /* SeamlessWindow.swift */; };
 		BA0000000000000000000104 /* ProbeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000004 /* ProbeEditorView.swift */; };
 		BA0000000000000000000105 /* ProbeWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000005 /* ProbeWindowController.swift */; };
+		BA0000000000000000000106 /* SeamlessHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000007 /* SeamlessHostingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +22,7 @@
 		BA0000000000000000000004 /* ProbeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeEditorView.swift; sourceTree = "<group>"; };
 		BA0000000000000000000005 /* ProbeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProbeWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000006 /* StickyNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StickyNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BA0000000000000000000007 /* SeamlessHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeamlessHostingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +54,7 @@
 				BA0000000000000000000003 /* SeamlessWindow.swift */,
 				BA0000000000000000000004 /* ProbeEditorView.swift */,
 				BA0000000000000000000005 /* ProbeWindowController.swift */,
+				BA0000000000000000000007 /* SeamlessHostingView.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -135,6 +138,7 @@
 				BA0000000000000000000103 /* SeamlessWindow.swift in Sources */,
 				BA0000000000000000000104 /* ProbeEditorView.swift in Sources */,
 				BA0000000000000000000105 /* ProbeWindowController.swift in Sources */,
+				BA0000000000000000000106 /* SeamlessHostingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

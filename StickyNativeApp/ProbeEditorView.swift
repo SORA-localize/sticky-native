@@ -1,7 +1,10 @@
 import SwiftUI
 
 struct ProbeEditorView: View {
+  let onClose: () -> Void
+
   @State private var draft = ""
+  @State private var isPinned = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -16,15 +19,45 @@ struct ProbeEditorView: View {
 
         Spacer()
 
-        Text("Phase 1-1")
-          .font(.system(size: 11, weight: .medium))
-          .foregroundStyle(.secondary)
+        Button {
+          isPinned.toggle()
+        } label: {
+          Image(systemName: isPinned ? "pin.fill" : "pin")
+            .font(.system(size: 12, weight: .semibold))
+            .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .background(isPinned ? Color.white.opacity(0.30) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+        Button {
+          onClose()
+        } label: {
+          Image(systemName: "xmark")
+            .font(.system(size: 11, weight: .bold))
+            .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .background(Color.white.opacity(0.14))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
       }
       .padding(.horizontal, 16)
       .padding(.top, 14)
       .padding(.bottom, 12)
 
       Divider()
+
+      HStack {
+        Text(isPinned ? "Pinned state toggled" : "Click pin while another app is frontmost")
+          .font(.system(size: 11, weight: .medium))
+          .foregroundStyle(.secondary)
+        Spacer()
+        Text("Phase 1-2")
+          .font(.system(size: 11, weight: .medium))
+          .foregroundStyle(.secondary)
+      }
+      .padding(.horizontal, 16)
+      .padding(.vertical, 10)
 
       TextEditor(text: $draft)
         .font(.system(size: 16))

@@ -13,8 +13,16 @@ final class ProbeWindowController: NSWindowController, NSWindowDelegate {
 
     super.init(window: window)
 
-    let hostingController = NSHostingController(rootView: AnyView(ProbeEditorView()))
-    window.contentViewController = hostingController
+    let hostingView = SeamlessHostingView(
+      rootView: ProbeEditorView(
+        onClose: { [weak window] in
+          window?.performClose(nil)
+        }
+      )
+    )
+    hostingView.frame = CGRect(origin: .zero, size: window.frame.size)
+    hostingView.autoresizingMask = [.width, .height]
+    window.contentView = hostingView
     window.delegate = self
     window.titleVisibility = .hidden
     window.titlebarAppearsTransparent = true
