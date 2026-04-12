@@ -21,6 +21,7 @@
 - `canBecomeKey` / `canBecomeMain`
 - `@FocusState`
 - material / vibrancy の疎通確認
+- status: 完了。結果は `phase-1-seamless-window-probe-result.md`
 
 ## Phase 2
 
@@ -30,6 +31,7 @@
 - memo window
 - pin / close / reopen
 - drag / resize
+- 現行計画: `phase-2-window-core-mvp-plan.md`
 
 ## Phase 3
 

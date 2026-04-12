@@ -5,8 +5,9 @@ Sticky の legacy 実装を延命せず、`1 memo = 1 window` と `seamless UX` 
 ## Current Status
 
 - docs を SSOT として維持
-- UI / window 基盤は再設計のためリセット対象
-- 次の実装は `SeamlessWindow` / `SeamlessHostingView` 前提で再開する
+- Phase 1 `Seamless Window Probe` は完了
+- `SeamlessWindow` / `SeamlessHostingView` / `acceptsFirstMouse` / `@FocusState` は採用継続
+- 次の実装は `Phase 2: Window Core MVP`
 
 ## Source Of Truth
 

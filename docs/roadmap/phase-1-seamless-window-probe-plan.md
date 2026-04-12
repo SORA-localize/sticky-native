@@ -120,3 +120,4 @@ Gate:
 ## 変更履歴
 
 - 2026-04-12: 初版作成
+- 2026-04-12: probe 完了。結果文書は `phase-1-seamless-window-probe-result.md` を参照
