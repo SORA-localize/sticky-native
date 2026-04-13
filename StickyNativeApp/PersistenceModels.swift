@@ -13,4 +13,12 @@ struct PersistedMemo {
   let isTrash: Bool
   let createdAt: Date?
   let updatedAt: Date
+  let sessionID: UUID?
+}
+
+struct Session {
+  let id: UUID
+  let name: String
+  let createdAt: Date
+  let updatedAt: Date
 }

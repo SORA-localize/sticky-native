@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class HomeWindowController: NSWindowController, NSWindowDelegate {
   let viewModel: HomeViewModel
+  private let coordinator: PersistenceCoordinator
 
   var onOpenMemo: ((UUID) -> Void)?
   var onTrashMemo: ((UUID) -> Void)?
@@ -11,6 +12,7 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
   var onEmptyTrash: (() -> Void)?
 
   init(coordinator: PersistenceCoordinator) {
+    self.coordinator = coordinator
     self.viewModel = HomeViewModel(coordinator: coordinator)
 
     let window = NSWindow(
@@ -31,7 +33,11 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
       onOpenMemo: { [weak self] id in self?.handleOpenMemo(id: id) },
       onTrashMemo: { [weak self] id in self?.handleTrashMemo(id: id) },
       onRestoreMemo: { [weak self] id in self?.handleRestoreMemo(id: id) },
-      onEmptyTrash: { [weak self] in self?.handleEmptyTrash() }
+      onEmptyTrash: { [weak self] in self?.handleEmptyTrash() },
+      onCreateSession: { [weak self] name in self?.handleCreateSession(name: name) },
+      onRenameSession: { [weak self] id, name in self?.handleRenameSession(id: id, name: name) },
+      onDeleteSession: { [weak self] id in self?.handleDeleteSession(id: id) },
+      onAssignSession: { [weak self] memoID, sessionID in self?.handleAssignSession(memoID: memoID, sessionID: sessionID) }
     )
     window.contentView = NSHostingView(rootView: rootView)
   }
@@ -49,7 +55,7 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
     window?.orderFrontRegardless()
   }
 
-  // MARK: - Handlers
+  // MARK: - Memo Handlers
 
   private func handleOpenMemo(id: UUID) {
     onOpenMemo?(id)
@@ -67,6 +73,32 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
 
   private func handleEmptyTrash() {
     onEmptyTrash?()
+    viewModel.reload()
+  }
+
+  // MARK: - Session Handlers
+
+  private func handleCreateSession(name: String) {
+    coordinator.createSession(name: name)
+    viewModel.reload()
+  }
+
+  private func handleRenameSession(id: UUID, name: String) {
+    coordinator.renameSession(id: id, name: name)
+    viewModel.reload()
+  }
+
+  private func handleDeleteSession(id: UUID) {
+    // 削除されたセッションを選択中なら All に戻す
+    if viewModel.selectedFilter == .session(id) {
+      viewModel.selectedFilter = .all
+    }
+    coordinator.deleteSession(id: id)
+    viewModel.reload()
+  }
+
+  private func handleAssignSession(memoID: UUID, sessionID: UUID?) {
+    coordinator.assignSession(memoID: memoID, sessionID: sessionID)
     viewModel.reload()
   }
 }

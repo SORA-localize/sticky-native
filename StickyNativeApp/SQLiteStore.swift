@@ -4,13 +4,20 @@ import SQLite3
 final class SQLiteStore {
   private var db: OpaquePointer?
 
-  // SELECT で使う標準列順
+  // SELECT で使う標準列順（isSessionReady == true 時は末尾に 12:session_id が追加される）
   // 0:id 1:draft 2:title 3:origin_x 4:origin_y 5:width 6:height
-  // 7:is_pinned 8:is_open 9:is_trashed 10:created_at 11:updated_at
-  private static let selectColumns = """
-    id, draft, title, origin_x, origin_y, width, height,
-    is_pinned, is_open, is_trashed, created_at, updated_at
-    """
+  // 7:is_pinned 8:is_open 9:is_trashed 10:created_at 11:updated_at [12:session_id]
+  private var selectColumns: String {
+    let base = """
+      id, draft, title, origin_x, origin_y, width, height,
+      is_pinned, is_open, is_trashed, created_at, updated_at
+      """
+    return isSessionReady ? base + ", session_id" : base
+  }
+
+  /// session_id 列の migration が成功した場合のみ true。
+  /// false のままでも起動は継続する（degraded 起動）。
+  private(set) var isSessionReady: Bool = false
 
   init() throws {
     let url = try Self.storeURL()
@@ -30,7 +37,7 @@ final class SQLiteStore {
   // MARK: - Schema
 
   private func createSchema() throws {
-    let sql = """
+    let memoSQL = """
       CREATE TABLE IF NOT EXISTS memos (
         id         TEXT PRIMARY KEY,
         draft      TEXT NOT NULL,
@@ -46,7 +53,16 @@ final class SQLiteStore {
         updated_at REAL NOT NULL
       );
       """
-    try exec(sql)
+    let sessionSQL = """
+      CREATE TABLE IF NOT EXISTS sessions (
+        id         TEXT PRIMARY KEY,
+        name       TEXT NOT NULL DEFAULT '',
+        created_at REAL NOT NULL,
+        updated_at REAL NOT NULL
+      );
+      """
+    try exec(memoSQL)
+    try exec(sessionSQL)
   }
 
   private func migrate() throws {
@@ -59,6 +75,16 @@ final class SQLiteStore {
     }
     if !existing.contains("created_at") {
       try exec("ALTER TABLE memos ADD COLUMN created_at REAL;")
+    }
+
+    // session_id migration: 失敗しても起動継続（degraded 起動）
+    do {
+      if !existing.contains("session_id") {
+        try exec("ALTER TABLE memos ADD COLUMN session_id TEXT REFERENCES sessions(id);")
+      }
+      isSessionReady = true
+    } catch {
+      // isSessionReady は false のまま。UI 側は disabled で表示する。
     }
   }
 
@@ -76,7 +102,7 @@ final class SQLiteStore {
     return names
   }
 
-  // MARK: - CRUD
+  // MARK: - Memo CRUD
 
   func upsertDraft(id: UUID, draft: String, title: String) throws {
     let now = Date.now.timeIntervalSince1970
@@ -100,7 +126,7 @@ final class SQLiteStore {
     try step(stmt)
   }
 
-  // frame と isOpen のみ更新。is_pinned / title / is_trashed は既存の値を保持する。
+  // frame と isOpen のみ更新。is_pinned / title / is_trashed / session_id は既存の値を保持する。
   func updateWindowState(
     id: UUID,
     originX: Double?,
@@ -192,42 +218,131 @@ final class SQLiteStore {
     try step(stmt)
   }
 
+  func updateMemoSession(id: UUID, sessionID: UUID?) throws {
+    let sql = "UPDATE memos SET session_id = ?, updated_at = ? WHERE id = ?;"
+    var stmt: OpaquePointer?
+    defer { sqlite3_finalize(stmt) }
+    try prepare(sql, &stmt)
+    if let sessionID {
+      sqlite3_bind_text(stmt, 1, sessionID.uuidString, -1, SQLITE_TRANSIENT)
+    } else {
+      sqlite3_bind_null(stmt, 1)
+    }
+    sqlite3_bind_double(stmt, 2, Date.now.timeIntervalSince1970)
+    sqlite3_bind_text(stmt, 3, id.uuidString, -1, SQLITE_TRANSIENT)
+    try step(stmt)
+  }
+
   func fetch(id: UUID) throws -> PersistedMemo? {
-    let sql = "SELECT \(Self.selectColumns) FROM memos WHERE id = ?;"
+    let sql = "SELECT \(selectColumns) FROM memos WHERE id = ?;"
     var stmt: OpaquePointer?
     defer { sqlite3_finalize(stmt) }
 
     try prepare(sql, &stmt)
     sqlite3_bind_text(stmt, 1, id.uuidString, -1, SQLITE_TRANSIENT)
     guard sqlite3_step(stmt) == SQLITE_ROW else { return nil }
-    return row(from: stmt)
+    return memoRow(from: stmt)
   }
 
   func fetchOpen() throws -> [PersistedMemo] {
-    let sql = "SELECT \(Self.selectColumns) FROM memos WHERE is_open = 1 AND is_trashed = 0 ORDER BY updated_at ASC;"
-    return try fetchList(sql: sql)
+    let sql = "SELECT \(selectColumns) FROM memos WHERE is_open = 1 AND is_trashed = 0 ORDER BY updated_at ASC;"
+    return try fetchMemoList(sql: sql)
   }
 
   func fetchAll() throws -> [PersistedMemo] {
-    let sql = "SELECT \(Self.selectColumns) FROM memos WHERE is_trashed = 0 ORDER BY updated_at DESC;"
-    return try fetchList(sql: sql)
+    let sql = "SELECT \(selectColumns) FROM memos WHERE is_trashed = 0 ORDER BY updated_at DESC;"
+    return try fetchMemoList(sql: sql)
   }
 
   func fetchTrashed() throws -> [PersistedMemo] {
-    let sql = "SELECT \(Self.selectColumns) FROM memos WHERE is_trashed = 1 ORDER BY updated_at DESC;"
-    return try fetchList(sql: sql)
+    let sql = "SELECT \(selectColumns) FROM memos WHERE is_trashed = 1 ORDER BY updated_at DESC;"
+    return try fetchMemoList(sql: sql)
+  }
+
+  // MARK: - Session CRUD
+
+  func insertSession(id: UUID, name: String) throws {
+    let now = Date.now.timeIntervalSince1970
+    let sql = """
+      INSERT INTO sessions (id, name, created_at, updated_at)
+      VALUES (?, ?, ?, ?);
+      """
+    var stmt: OpaquePointer?
+    defer { sqlite3_finalize(stmt) }
+    try prepare(sql, &stmt)
+    sqlite3_bind_text(stmt, 1, id.uuidString, -1, SQLITE_TRANSIENT)
+    sqlite3_bind_text(stmt, 2, name, -1, SQLITE_TRANSIENT)
+    sqlite3_bind_double(stmt, 3, now)
+    sqlite3_bind_double(stmt, 4, now)
+    try step(stmt)
+  }
+
+  func updateSession(id: UUID, name: String) throws {
+    let sql = "UPDATE sessions SET name = ?, updated_at = ? WHERE id = ?;"
+    var stmt: OpaquePointer?
+    defer { sqlite3_finalize(stmt) }
+    try prepare(sql, &stmt)
+    sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT)
+    sqlite3_bind_double(stmt, 2, Date.now.timeIntervalSince1970)
+    sqlite3_bind_text(stmt, 3, id.uuidString, -1, SQLITE_TRANSIENT)
+    try step(stmt)
+  }
+
+  func deleteSession(id: UUID) throws {
+    // 2 ステップをトランザクションで実行: memo を Unsorted に戻す → session 行削除
+    try exec("BEGIN;")
+    do {
+      try clearSessionFromMemos(sessionID: id)
+      try deleteSessionRow(id: id)
+      try exec("COMMIT;")
+    } catch {
+      try? exec("ROLLBACK;")
+      throw error
+    }
+  }
+
+  func fetchAllSessions() throws -> [Session] {
+    let sql = "SELECT id, name, created_at, updated_at FROM sessions ORDER BY created_at ASC;"
+    var stmt: OpaquePointer?
+    defer { sqlite3_finalize(stmt) }
+    try prepare(sql, &stmt)
+    var results: [Session] = []
+    while sqlite3_step(stmt) == SQLITE_ROW {
+      if let session = sessionRow(from: stmt) {
+        results.append(session)
+      }
+    }
+    return results
+  }
+
+  private func clearSessionFromMemos(sessionID: UUID) throws {
+    let sql = "UPDATE memos SET session_id = NULL WHERE session_id = ?;"
+    var stmt: OpaquePointer?
+    defer { sqlite3_finalize(stmt) }
+    try prepare(sql, &stmt)
+    sqlite3_bind_text(stmt, 1, sessionID.uuidString, -1, SQLITE_TRANSIENT)
+    try step(stmt)
+  }
+
+  private func deleteSessionRow(id: UUID) throws {
+    let sql = "DELETE FROM sessions WHERE id = ?;"
+    var stmt: OpaquePointer?
+    defer { sqlite3_finalize(stmt) }
+    try prepare(sql, &stmt)
+    sqlite3_bind_text(stmt, 1, id.uuidString, -1, SQLITE_TRANSIENT)
+    try step(stmt)
   }
 
   // MARK: - Helpers
 
-  private func fetchList(sql: String) throws -> [PersistedMemo] {
+  private func fetchMemoList(sql: String) throws -> [PersistedMemo] {
     var stmt: OpaquePointer?
     defer { sqlite3_finalize(stmt) }
 
     try prepare(sql, &stmt)
     var results: [PersistedMemo] = []
     while sqlite3_step(stmt) == SQLITE_ROW {
-      if let memo = row(from: stmt) {
+      if let memo = memoRow(from: stmt) {
         results.append(memo)
       }
     }
@@ -266,7 +381,7 @@ final class SQLiteStore {
     }
   }
 
-  private func row(from stmt: OpaquePointer?) -> PersistedMemo? {
+  private func memoRow(from stmt: OpaquePointer?) -> PersistedMemo? {
     guard
       let rawID = sqlite3_column_text(stmt, 0).map({ String(cString: $0) }),
       let id = UUID(uuidString: rawID),
@@ -281,6 +396,9 @@ final class SQLiteStore {
     let createdAt = sqlite3_column_type(stmt, 10) != SQLITE_NULL
       ? Date(timeIntervalSince1970: sqlite3_column_double(stmt, 10))
       : nil as Date?
+    let sessionID: UUID? = isSessionReady
+      ? sqlite3_column_text(stmt, 12).flatMap { UUID(uuidString: String(cString: $0)) }
+      : nil
 
     return PersistedMemo(
       id: id,
@@ -294,8 +412,20 @@ final class SQLiteStore {
       isOpen: sqlite3_column_int(stmt, 8) != 0,
       isTrash: sqlite3_column_int(stmt, 9) != 0,
       createdAt: createdAt,
-      updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 11))
+      updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 11)),
+      sessionID: sessionID
     )
+  }
+
+  private func sessionRow(from stmt: OpaquePointer?) -> Session? {
+    guard
+      let rawID = sqlite3_column_text(stmt, 0).map({ String(cString: $0) }),
+      let id = UUID(uuidString: rawID),
+      let name = sqlite3_column_text(stmt, 1).map({ String(cString: $0) })
+    else { return nil }
+    let createdAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 2))
+    let updatedAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 3))
+    return Session(id: id, name: name, createdAt: createdAt, updatedAt: updatedAt)
   }
 
   private static func storeURL() throws -> URL {

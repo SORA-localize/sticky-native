@@ -3,9 +3,11 @@ import Foundation
 @MainActor
 final class PersistenceCoordinator {
   private let store: SQLiteStore
+  private let sessionStore: SessionStore
 
   init(store: SQLiteStore) {
     self.store = store
+    self.sessionStore = SessionStore(store: store)
   }
 
   func saveDraft(id: UUID, draft: String) {
@@ -69,5 +71,30 @@ final class PersistenceCoordinator {
 
   func fetchOpenMemos() -> [PersistedMemo] {
     (try? store.fetchOpen()) ?? []
+  }
+
+  // MARK: - Session
+
+  var isSessionReady: Bool { store.isSessionReady }
+
+  @discardableResult
+  func createSession(name: String) -> Session? {
+    sessionStore.create(name: name)
+  }
+
+  func renameSession(id: UUID, name: String) {
+    sessionStore.rename(id: id, name: name)
+  }
+
+  func deleteSession(id: UUID) {
+    sessionStore.delete(id: id)
+  }
+
+  func fetchAllSessions() -> [Session] {
+    sessionStore.fetchAll()
+  }
+
+  func assignSession(memoID: UUID, sessionID: UUID?) {
+    sessionStore.assignToMemo(memoID: memoID, sessionID: sessionID)
   }
 }

@@ -27,6 +27,7 @@
 		BA0000000000000000000121 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000022 /* HomeViewModel.swift */; };
 		BA0000000000000000000122 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000023 /* HomeView.swift */; };
 		BA0000000000000000000123 /* HomeWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000024 /* HomeWindowController.swift */; };
+		BA0000000000000000000124 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000025 /* SessionStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +52,7 @@
 		BA0000000000000000000022 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		BA0000000000000000000023 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		BA0000000000000000000024 /* HomeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindowController.swift; sourceTree = "<group>"; };
+		BA0000000000000000000025 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -98,6 +100,7 @@
 				BA0000000000000000000022 /* HomeViewModel.swift */,
 				BA0000000000000000000023 /* HomeView.swift */,
 				BA0000000000000000000024 /* HomeWindowController.swift */,
+				BA0000000000000000000025 /* SessionStore.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -195,6 +198,7 @@
 				BA0000000000000000000121 /* HomeViewModel.swift in Sources */,
 				BA0000000000000000000122 /* HomeView.swift in Sources */,
 				BA0000000000000000000123 /* HomeWindowController.swift in Sources */,
+				BA0000000000000000000124 /* SessionStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
