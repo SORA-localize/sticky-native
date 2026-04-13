@@ -16,6 +16,13 @@ struct MemoEditorView: View {
       .background(
         RoundedRectangle(cornerRadius: 14, style: .continuous)
           .fill(Color.white.opacity(0.12))
+          .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+              .stroke(
+                isEditorFocused ? Color.white.opacity(0.55) : Color.white.opacity(0.18),
+                lineWidth: isEditorFocused ? 1.5 : 1
+              )
+          )
       )
       .onAppear {
         focusEditor()
@@ -23,6 +30,7 @@ struct MemoEditorView: View {
       .onChange(of: uiState.focusToken) { _, _ in
         focusEditor()
       }
+      .animation(.easeInOut(duration: 0.15), value: isEditorFocused)
   }
 
   private func focusEditor() {

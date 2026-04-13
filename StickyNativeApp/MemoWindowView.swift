@@ -103,7 +103,6 @@ struct MemoWindowView: View {
       RoundedRectangle(cornerRadius: 18, style: .continuous)
         .stroke(Color.white.opacity(0.35), lineWidth: 1)
     )
-    .padding(10)
   }
 
   private var pinBackgroundColor: Color {

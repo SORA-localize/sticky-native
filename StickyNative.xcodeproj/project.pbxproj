@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 71;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -84,8 +84,6 @@
 		};
 		BA0000000000000000000302 /* StickyNativeApp */ = {
 			isa = PBXGroup;
-			path = StickyNativeApp;
-			sourceTree = "<group>";
 			children = (
 				BA0000000000000000000001 /* StickyNativeApp.swift */,
 				BA0000000000000000000002 /* AppDelegate.swift */,
@@ -102,7 +100,6 @@
 				BA0000000000000000000017 /* PersistenceModels.swift */,
 				BA0000000000000000000018 /* SQLiteStore.swift */,
 				BA0000000000000000000020 /* AutosaveScheduler.swift */,
-				BA0000000000000000000021 /* PersistenceCoordinator.swift */,
 				BA0000000000000000000022 /* HomeViewModel.swift */,
 				BA0000000000000000000023 /* HomeView.swift */,
 				BA0000000000000000000024 /* HomeWindowController.swift */,
@@ -110,7 +107,10 @@
 				BA0000000000000000000026 /* AppSettings.swift */,
 				BA0000000000000000000027 /* SettingsView.swift */,
 				BA0000000000000000000028 /* SettingsWindowController.swift */,
+				BA0000000000000000000021 /* PersistenceCoordinator.swift */,
 			);
+			path = StickyNativeApp;
+			sourceTree = "<group>";
 		};
 		BA0000000000000000000303 /* Products */ = {
 			isa = PBXGroup;
@@ -251,9 +251,9 @@
 		BA0000000000000000000703 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "-";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;
@@ -273,9 +273,9 @@
 		BA0000000000000000000704 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGNING_ALLOWED = NO;
 				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "-";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;

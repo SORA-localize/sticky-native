@@ -60,7 +60,7 @@ final class WindowManager {
   func trashMemo(id: UUID) {
     if openControllers[id] != nil {
       trashedMemoIDs.insert(id)
-      openControllers[id]?.window?.performClose(nil)
+      openControllers[id]?.window?.close()
     } else {
       closedMemoRecords.removeAll { $0.memoID == id }
       coordinator.trashMemo(id: id)

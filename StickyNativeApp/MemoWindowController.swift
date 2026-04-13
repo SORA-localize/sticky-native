@@ -40,10 +40,11 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     let window = SeamlessWindow(
       contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
-      styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+      styleMask: [.borderless, .resizable, .fullSizeContentView, .nonactivatingPanel],
       backing: .buffered,
       defer: false
     )
+    window.becomesKeyOnlyIfNeeded = true
 
     super.init(window: window)
 
@@ -54,9 +55,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     window.contentView = hostingView
     window.delegate = self
-    window.titleVisibility = .hidden
-    window.titlebarAppearsTransparent = true
-    window.isMovableByWindowBackground = false
+    window.isMovableByWindowBackground = true
     window.isOpaque = false
     window.backgroundColor = .clear
     window.hasShadow = true
@@ -128,7 +127,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
         onTrash(memo.id)
       },
       onClose: { [weak self] in
-        self?.window?.performClose(nil)
+        self?.window?.close()
       },
       onSave: { [weak self] in
         guard let self else { return }
@@ -138,7 +137,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
         guard let self else { return }
         didExplicitFlush = true
         onFlush(memo.id, memo.draft)
-        window?.performClose(nil)
+        window?.close()
       }
     )
   }
