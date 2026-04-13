@@ -43,6 +43,12 @@
 - `created_at` REAL NOT NULL
 - `updated_at` REAL NOT NULL
 
+## 旧データ移行方針
+
+- 旧 Sticky データの import は実装しない（2026-04-13 確定）
+- 旧データは削除してよい
+- StickyNative は新規 DB のみで運用する
+
 ## レイヤ責務
 
 - App layer: app lifecycle、menu bar、global shortcut

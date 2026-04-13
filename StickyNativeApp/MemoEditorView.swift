@@ -3,12 +3,13 @@ import SwiftUI
 struct MemoEditorView: View {
   @ObservedObject var memo: MemoWindow
   @ObservedObject var uiState: MemoWindowUIState
+  @EnvironmentObject private var appSettings: AppSettings
 
   @FocusState private var isEditorFocused: Bool
 
   var body: some View {
     TextEditor(text: $memo.draft)
-      .font(.system(size: 16))
+      .font(.system(size: appSettings.editorFontSize))
       .focused($isEditorFocused)
       .scrollContentBackground(.hidden)
       .padding(14)

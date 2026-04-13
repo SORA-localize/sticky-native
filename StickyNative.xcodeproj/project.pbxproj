@@ -28,6 +28,9 @@
 		BA0000000000000000000122 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000023 /* HomeView.swift */; };
 		BA0000000000000000000123 /* HomeWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000024 /* HomeWindowController.swift */; };
 		BA0000000000000000000124 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000025 /* SessionStore.swift */; };
+		BA0000000000000000000125 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000026 /* AppSettings.swift */; };
+		BA0000000000000000000126 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000027 /* SettingsView.swift */; };
+		BA0000000000000000000127 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000028 /* SettingsWindowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +56,9 @@
 		BA0000000000000000000023 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		BA0000000000000000000024 /* HomeWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000025 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		BA0000000000000000000026 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		BA0000000000000000000027 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BA0000000000000000000028 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +107,9 @@
 				BA0000000000000000000023 /* HomeView.swift */,
 				BA0000000000000000000024 /* HomeWindowController.swift */,
 				BA0000000000000000000025 /* SessionStore.swift */,
+				BA0000000000000000000026 /* AppSettings.swift */,
+				BA0000000000000000000027 /* SettingsView.swift */,
+				BA0000000000000000000028 /* SettingsWindowController.swift */,
 			);
 		};
 		BA0000000000000000000303 /* Products */ = {
@@ -199,6 +208,9 @@
 				BA0000000000000000000122 /* HomeView.swift in Sources */,
 				BA0000000000000000000123 /* HomeWindowController.swift in Sources */,
 				BA0000000000000000000124 /* SessionStore.swift in Sources */,
+				BA0000000000000000000125 /* AppSettings.swift in Sources */,
+				BA0000000000000000000126 /* SettingsView.swift in Sources */,
+				BA0000000000000000000127 /* SettingsWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

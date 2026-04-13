@@ -12,14 +12,17 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   private let onPinChange: (UUID, Bool) -> Void
   private let onTrash: (UUID) -> Void
   private let uiState: MemoWindowUIState
-  private var hostingView: SeamlessHostingView<MemoWindowView>?
+  private let appSettings: AppSettings
+  private var hostingView: NSView?
   private var draftCancellable: AnyCancellable?
+  private var didExplicitFlush = false
 
   init(
     memo: MemoWindow,
     origin: NSPoint?,
     size: NSSize? = nil,
     initiallyPinned: Bool = false,
+    appSettings: AppSettings = .shared,
     onDraftChange: @escaping (UUID, String) -> Void,
     onFlush: @escaping (UUID, String) -> Void,
     onPinChange: @escaping (UUID, Bool) -> Void,
@@ -33,6 +36,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     self.onPinChange = onPinChange
     self.onTrash = onTrash
     self.uiState = MemoWindowUIState(isPinned: initiallyPinned)
+    self.appSettings = appSettings
 
     let window = SeamlessWindow(
       contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
@@ -43,7 +47,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     super.init(window: window)
 
-    let hostingView = SeamlessHostingView(rootView: makeRootView())
+    let hostingView = SeamlessHostingView(rootView: makeRootView().environmentObject(appSettings))
     hostingView.frame = CGRect(origin: .zero, size: window.frame.size)
     hostingView.autoresizingMask = NSView.AutoresizingMask(arrayLiteral: .width, .height)
     self.hostingView = hostingView
@@ -97,7 +101,9 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func windowWillClose(_ notification: Notification) {
-    onFlush(memo.id, memo.draft)
+    if !didExplicitFlush {
+      onFlush(memo.id, memo.draft)
+    }
     onClose(ClosedMemoRecord(memoID: memo.id, frame: window?.frame))
   }
 
@@ -123,6 +129,16 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       },
       onClose: { [weak self] in
         self?.window?.performClose(nil)
+      },
+      onSave: { [weak self] in
+        guard let self else { return }
+        onFlush(memo.id, memo.draft)
+      },
+      onSaveAndClose: { [weak self] in
+        guard let self else { return }
+        didExplicitFlush = true
+        onFlush(memo.id, memo.draft)
+        window?.performClose(nil)
       }
     )
   }

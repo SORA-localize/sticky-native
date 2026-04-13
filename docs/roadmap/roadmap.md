@@ -57,5 +57,5 @@
 ## Phase 6
 
 - visual polish
-- import 要否の再評価
 - 日常使用レベルの edge case 詰め
+- import 再評価: 旧 Sticky データは不要と判断。import 機能は実装しない（2026-04-13 確定）

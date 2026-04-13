@@ -13,6 +13,8 @@ struct MemoWindowView: View {
   let onPinToggle: () -> Void
   let onTrash: () -> Void
   let onClose: () -> Void
+  let onSave: () -> Void
+  let onSaveAndClose: () -> Void
 
   @State private var hoveredControl: HoveredControl?
 
@@ -83,6 +85,16 @@ struct MemoWindowView: View {
       MemoEditorView(memo: memo, uiState: uiState)
         .padding(.horizontal, 12)
         .padding(.bottom, 12)
+
+      // 不可視ショートカットボタン
+      Group {
+        Button(action: onSave) { EmptyView() }
+          .keyboardShortcut("s", modifiers: .command)
+          .frame(width: 0, height: 0)
+        Button(action: onSaveAndClose) { EmptyView() }
+          .keyboardShortcut(.return, modifiers: .command)
+          .frame(width: 0, height: 0)
+      }
     }
     .frame(minWidth: 420, minHeight: 280)
     .background(.ultraThinMaterial)

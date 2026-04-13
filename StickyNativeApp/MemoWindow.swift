@@ -13,6 +13,10 @@ final class MemoWindow: ObservableObject, Identifiable {
   }
 
   var title: String {
-    "Quick Memo"
+    let firstLine = draft
+      .components(separatedBy: "\n")
+      .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? ""
+    let trimmed = firstLine.trimmingCharacters(in: .whitespaces)
+    return trimmed.isEmpty ? "New Memo" : String(trimmed.prefix(30))
   }
 }

@@ -5,7 +5,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let hotkeyManager = HotkeyManager()
   private var windowManager: WindowManager!
   private var homeWindowController: HomeWindowController!
+  private var settingsWindowController: SettingsWindowController!
   private let menuBarController = MenuBarController()
+  private let appSettings = AppSettings.shared
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     NSApp.setActivationPolicy(.accessory)
@@ -14,8 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       fatalError("Failed to open SQLite store")
     }
     let coordinator = PersistenceCoordinator(store: store)
-    windowManager = WindowManager(coordinator: coordinator)
+    windowManager = WindowManager(coordinator: coordinator, appSettings: appSettings)
     homeWindowController = HomeWindowController(coordinator: coordinator)
+    settingsWindowController = SettingsWindowController(appSettings: appSettings)
 
     homeWindowController.onOpenMemo = { [weak self] id in
       self?.windowManager.openMemo(id: id)
@@ -38,6 +41,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     menuBarController.onReopenLastClosed = { [weak self] in
       self?.windowManager.reopenLastClosedMemo()
+    }
+    menuBarController.onOpenSettings = { [weak self] in
+      self?.settingsWindowController.show()
     }
 
     windowManager.onClosedStackChanged = { [weak self] in

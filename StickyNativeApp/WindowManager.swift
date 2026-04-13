@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 struct ClosedMemoRecord {
   let memoID: UUID
@@ -14,13 +14,15 @@ final class WindowManager {
 
   private let coordinator: PersistenceCoordinator
   private let scheduler: AutosaveScheduler
+  private let appSettings: AppSettings
 
   var onClosedStackChanged: (() -> Void)?
   private var isTerminating = false
   private var trashedMemoIDs: Set<UUID> = []
 
-  init(coordinator: PersistenceCoordinator) {
+  init(coordinator: PersistenceCoordinator, appSettings: AppSettings = .shared) {
     self.coordinator = coordinator
+    self.appSettings = appSettings
     self.scheduler = AutosaveScheduler { [coordinator] id, draft in
       coordinator.saveDraft(id: id, draft: draft)
     }
@@ -48,6 +50,9 @@ final class WindowManager {
     let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
     openControllers[id] = controller
     controller.showAndFocusEditor()
+    if let frame = controller.currentFrame {
+      controller.window?.setFrame(clampedFrame(frame), display: false)
+    }
     lastCascadeOrigin = controller.currentFrame?.origin
     onClosedStackChanged?()
   }
@@ -84,6 +89,9 @@ final class WindowManager {
       let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
       openControllers[memo.id] = controller
       controller.showAndFocusEditor()
+      if let frame = controller.currentFrame {
+        controller.window?.setFrame(clampedFrame(frame), display: false)
+      }
       lastCascadeOrigin = controller.currentFrame?.origin
     }
   }
@@ -143,6 +151,7 @@ final class WindowManager {
       origin: resolvedOrigin,
       size: size,
       initiallyPinned: initiallyPinned,
+      appSettings: appSettings,
       onDraftChange: { [weak self] id, draft in
         self?.scheduler.schedule(id: id, draft: draft)
       },
@@ -178,6 +187,27 @@ final class WindowManager {
     }
 
     onClosedStackChanged?()
+  }
+
+  private func clampedFrame(_ frame: NSRect) -> NSRect {
+    let screens = NSScreen.screens
+    guard !screens.isEmpty else { return frame }
+
+    // frame の左上コーナーが最も近いスクリーンを探す
+    let topLeft = NSPoint(x: frame.minX, y: frame.maxY)
+    let nearest = screens.min(by: {
+      let d0 = hypot($0.visibleFrame.midX - topLeft.x, $0.visibleFrame.midY - topLeft.y)
+      let d1 = hypot($1.visibleFrame.midX - topLeft.x, $1.visibleFrame.midY - topLeft.y)
+      return d0 < d1
+    }) ?? screens[0]
+
+    let visible = nearest.visibleFrame
+    let margin: CGFloat = 20
+
+    // origin を visible frame 内に収まるよう補正（サイズは変更しない）
+    let clampedX = min(max(frame.minX, visible.minX + margin), visible.maxX - frame.width - margin)
+    let clampedY = min(max(frame.minY, visible.minY + margin), visible.maxY - frame.height - margin)
+    return NSRect(origin: NSPoint(x: clampedX, y: clampedY), size: frame.size)
   }
 
   private func makeNextWindowOrigin() -> NSPoint? {
