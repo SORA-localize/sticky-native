@@ -39,10 +39,10 @@ private struct ShortcutsView: View {
         }
 
         section("メモウィンドウ") {
-          row(key: "⌘ + S",     label: "保存")
-          row(key: "⌘ + Enter", label: "保存して閉じる")
-          row(key: "⌘ + W",     label: "閉じる")
-          row(key: "⌘ + ⌫",    label: "ゴミ箱に移す（確認あり）")
+          row(key: "⌘ + S",     label: "保存",             theme: .save)
+          row(key: "⌘ + Enter", label: "保存して閉じる",    theme: .saveAndClose)
+          row(key: "⌘ + W",     label: "閉じる",            theme: .close)
+          row(key: "⌘ + ⌫",    label: "ゴミ箱に移す（確認あり）", theme: .trash)
         }
 
         section("ヘッダボタン") {
@@ -67,8 +67,13 @@ private struct ShortcutsView: View {
     }
   }
 
-  private func row(key: String, label: String) -> some View {
-    HStack {
+  private func row(key: String, label: String, theme: CommandTheme? = nil) -> some View {
+    HStack(spacing: 8) {
+      if let theme {
+        Circle()
+          .fill(theme.color)
+          .frame(width: 8, height: 8)
+      }
       Text(label)
         .font(.system(size: 13))
       Spacer()

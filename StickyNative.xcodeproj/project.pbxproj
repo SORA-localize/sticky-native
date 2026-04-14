@@ -32,6 +32,7 @@
 		BA0000000000000000000126 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000027 /* SettingsView.swift */; };
 		BA0000000000000000000127 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000028 /* SettingsWindowController.swift */; };
 		BA0000000000000000000128 /* ShortcutsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000029 /* ShortcutsWindowController.swift */; };
+		BA0000000000000000000130 /* CommandTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000131 /* CommandTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +62,7 @@
 		BA0000000000000000000027 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		BA0000000000000000000028 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000029 /* ShortcutsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsWindowController.swift; sourceTree = "<group>"; };
+		BA0000000000000000000131 /* CommandTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +112,7 @@
 				BA0000000000000000000027 /* SettingsView.swift */,
 				BA0000000000000000000028 /* SettingsWindowController.swift */,
 				BA0000000000000000000029 /* ShortcutsWindowController.swift */,
+				BA0000000000000000000131 /* CommandTheme.swift */,
 				BA0000000000000000000021 /* PersistenceCoordinator.swift */,
 			);
 			path = StickyNativeApp;
@@ -215,6 +218,7 @@
 				BA0000000000000000000126 /* SettingsView.swift in Sources */,
 				BA0000000000000000000127 /* SettingsWindowController.swift in Sources */,
 				BA0000000000000000000128 /* ShortcutsWindowController.swift in Sources */,
+				BA0000000000000000000130 /* CommandTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

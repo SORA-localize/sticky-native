@@ -89,16 +89,28 @@ struct MemoWindowView: View {
 
       // 不可視ショートカットボタン
       Group {
-        Button(action: onSave) { EmptyView() }
+        Button(action: {
+          uiState.triggerFlash(.save)
+          onSave()
+        }) { EmptyView() }
           .keyboardShortcut("s", modifiers: .command)
           .frame(width: 0, height: 0)
-        Button(action: onSaveAndClose) { EmptyView() }
+        Button(action: {
+          uiState.triggerFlash(.saveAndClose)
+          uiState.scheduleAction(after: 200) { onSaveAndClose() }
+        }) { EmptyView() }
           .keyboardShortcut(.return, modifiers: .command)
           .frame(width: 0, height: 0)
-        Button(action: { showingTrashConfirmation = true }) { EmptyView() }
+        Button(action: {
+          uiState.triggerFlash(.trash)
+          uiState.scheduleAction(after: 200) { showingTrashConfirmation = true }
+        }) { EmptyView() }
           .keyboardShortcut(.delete, modifiers: .command)
           .frame(width: 0, height: 0)
-        Button(action: onClose) { EmptyView() }
+        Button(action: {
+          uiState.triggerFlash(.close)
+          uiState.scheduleAction(after: 200) { onClose() }
+        }) { EmptyView() }
           .keyboardShortcut("w", modifiers: .command)
           .frame(width: 0, height: 0)
       }
@@ -109,6 +121,12 @@ struct MemoWindowView: View {
     .overlay(
       RoundedRectangle(cornerRadius: 18, style: .continuous)
         .stroke(Color.white.opacity(0.35), lineWidth: 1)
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 18, style: .continuous)
+        .stroke(uiState.flashCommand?.color ?? .clear, lineWidth: 2)
+        .shadow(color: (uiState.flashCommand?.color ?? .clear).opacity(0.7), radius: 12)
+        .opacity(uiState.flashCommand != nil ? 1 : 0)
     )
     .alert("このメモをゴミ箱に移しますか？", isPresented: $showingTrashConfirmation) {
       Button("ゴミ箱に移す") { onTrash() }
