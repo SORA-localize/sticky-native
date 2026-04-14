@@ -10,8 +10,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let appSettings = AppSettings.shared
 
   func applicationDidFinishLaunching(_ notification: Notification) {
-    NSApp.setActivationPolicy(.accessory)
-
     guard let store = try? SQLiteStore() else {
       fatalError("Failed to open SQLite store")
     }

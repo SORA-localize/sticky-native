@@ -6,7 +6,6 @@ final class SeamlessWindow: NSPanel {
 
   override func becomeKey() {
     NSLog("[SeamlessWindow] becomeKey")
-    NSApp.activate(ignoringOtherApps: true)
     super.becomeKey()
   }
 

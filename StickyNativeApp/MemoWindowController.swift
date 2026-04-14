@@ -40,11 +40,11 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     let window = SeamlessWindow(
       contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
-      styleMask: [.borderless, .resizable, .fullSizeContentView, .nonactivatingPanel],
+      styleMask: [.borderless, .resizable, .fullSizeContentView],
       backing: .buffered,
       defer: false
     )
-    window.becomesKeyOnlyIfNeeded = true
+    window.hidesOnDeactivate = false
 
     super.init(window: window)
 
@@ -87,10 +87,8 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
   func showAndFocusEditor() {
     requestEditorFocus()
-    showWindow(nil)
     NSApp.activate(ignoringOtherApps: true)
     window?.makeKeyAndOrderFront(nil)
-    window?.orderFrontRegardless()
   }
 
   func pinWindow(_ pinned: Bool) {
@@ -151,7 +149,13 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   private func applyPinState() {
-    window?.level = uiState.isPinned ? .floating : .normal
+    if uiState.isPinned {
+      window?.level = .floating
+      window?.collectionBehavior = [.managed, .fullScreenAuxiliary]
+    } else {
+      window?.level = .normal
+      window?.collectionBehavior = .managed
+    }
   }
 
   private func requestEditorFocus() {
