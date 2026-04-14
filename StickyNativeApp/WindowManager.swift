@@ -106,7 +106,8 @@ final class WindowManager {
 
   func createNewMemoWindow() {
     let memo = MemoWindow()
-    let controller = makeController(for: memo)
+    let size = NSSize(width: appSettings.defaultMemoWidth, height: appSettings.defaultMemoHeight)
+    let controller = makeController(for: memo, size: size)
     openControllers[memo.id] = controller
     controller.showAndFocusEditor()
     lastCascadeOrigin = controller.currentFrame?.origin

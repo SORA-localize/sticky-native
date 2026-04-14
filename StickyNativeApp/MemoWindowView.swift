@@ -17,6 +17,7 @@ struct MemoWindowView: View {
   let onSaveAndClose: () -> Void
 
   @State private var hoveredControl: HoveredControl?
+  @State private var showingTrashConfirmation = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -49,7 +50,7 @@ struct MemoWindowView: View {
           hoveredControl = isHovered ? .pin : (hoveredControl == .pin ? nil : hoveredControl)
         }
 
-        Button(action: onTrash) {
+        Button(action: { showingTrashConfirmation = true }) {
           Image(systemName: "trash")
             .font(.system(size: 11, weight: .semibold))
             .frame(width: 28, height: 28)
@@ -94,6 +95,12 @@ struct MemoWindowView: View {
         Button(action: onSaveAndClose) { EmptyView() }
           .keyboardShortcut(.return, modifiers: .command)
           .frame(width: 0, height: 0)
+        Button(action: { showingTrashConfirmation = true }) { EmptyView() }
+          .keyboardShortcut(.delete, modifiers: .command)
+          .frame(width: 0, height: 0)
+        Button(action: onClose) { EmptyView() }
+          .keyboardShortcut("w", modifiers: .command)
+          .frame(width: 0, height: 0)
       }
     }
     .frame(minWidth: 420, minHeight: 280)
@@ -103,6 +110,10 @@ struct MemoWindowView: View {
       RoundedRectangle(cornerRadius: 18, style: .continuous)
         .stroke(Color.white.opacity(0.35), lineWidth: 1)
     )
+    .alert("このメモをゴミ箱に移しますか？", isPresented: $showingTrashConfirmation) {
+      Button("ゴミ箱に移す") { onTrash() }
+      Button("キャンセル", role: .cancel) {}
+    }
   }
 
   private var pinBackgroundColor: Color {

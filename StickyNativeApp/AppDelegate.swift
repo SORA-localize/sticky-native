@@ -5,9 +5,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let hotkeyManager = HotkeyManager()
   private var windowManager: WindowManager!
   private var homeWindowController: HomeWindowController!
-  private var settingsWindowController: SettingsWindowController!
-  private let menuBarController = MenuBarController()
+  private var shortcutsWindowController: ShortcutsWindowController!
   private let appSettings = AppSettings.shared
+  private lazy var menuBarController = MenuBarController(appSettings: appSettings)
 
   func applicationDidFinishLaunching(_ notification: Notification) {
     guard let store = try? SQLiteStore() else {
@@ -16,7 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let coordinator = PersistenceCoordinator(store: store)
     windowManager = WindowManager(coordinator: coordinator, appSettings: appSettings)
     homeWindowController = HomeWindowController(coordinator: coordinator)
-    settingsWindowController = SettingsWindowController(appSettings: appSettings)
+    shortcutsWindowController = ShortcutsWindowController()
 
     homeWindowController.onOpenMemo = { [weak self] id in
       self?.windowManager.openMemo(id: id)
@@ -40,8 +40,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menuBarController.onReopenLastClosed = { [weak self] in
       self?.windowManager.reopenLastClosedMemo()
     }
-    menuBarController.onOpenSettings = { [weak self] in
-      self?.settingsWindowController.show()
+    menuBarController.onOpenShortcuts = { [weak self] in
+      self?.shortcutsWindowController.show()
     }
 
     windowManager.onClosedStackChanged = { [weak self] in
