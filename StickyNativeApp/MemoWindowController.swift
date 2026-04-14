@@ -99,6 +99,14 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     onPinChange(memo.id, pinned)
   }
 
+  func windowDidBecomeKey(_ notification: Notification) {
+    NSLog("[MemoWindowController] windowDidBecomeKey")
+  }
+
+  func windowDidBecomeMain(_ notification: Notification) {
+    NSLog("[MemoWindowController] windowDidBecomeMain")
+  }
+
   func windowWillClose(_ notification: Notification) {
     if !didExplicitFlush {
       onFlush(memo.id, memo.draft)
