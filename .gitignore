@@ -3,6 +3,7 @@
 build/
 xcuserdata/
 RELEASE_ROADMAP.md
+RELEASE_TASKS.md
 .claude/
 *.xcuserstate
 *.mobileprovision
@@ -14,5 +15,7 @@ RELEASE_ROADMAP.md
 .env.*
 dist/
 release/
+StickyNative_distribution/
 *.dmg
 *.zip
+notary-log.json
