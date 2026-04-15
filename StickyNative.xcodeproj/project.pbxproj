@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BA0000000000000000000132 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000133 /* Assets.xcassets */; };
 		BA0000000000000000000101 /* StickyNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000001 /* StickyNativeApp.swift */; };
 		BA0000000000000000000102 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000002 /* AppDelegate.swift */; };
 		BA0000000000000000000103 /* SeamlessWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000003 /* SeamlessWindow.swift */; };
@@ -34,11 +33,11 @@
 		BA0000000000000000000127 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000028 /* SettingsWindowController.swift */; };
 		BA0000000000000000000128 /* ShortcutsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000029 /* ShortcutsWindowController.swift */; };
 		BA0000000000000000000130 /* CommandTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000131 /* CommandTheme.swift */; };
+		BA0000000000000000000132 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000133 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		BA0000000000000000000001 /* StickyNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickyNativeApp.swift; sourceTree = "<group>"; };
-		BA0000000000000000000133 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BA0000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		BA0000000000000000000003 /* SeamlessWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeamlessWindow.swift; sourceTree = "<group>"; };
 		BA0000000000000000000006 /* StickyNative.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StickyNative.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -65,6 +64,7 @@
 		BA0000000000000000000028 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000029 /* ShortcutsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000131 /* CommandTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandTheme.swift; sourceTree = "<group>"; };
+		BA0000000000000000000133 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -263,21 +263,28 @@
 		BA0000000000000000000703 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				AUTOMATION_APPLE_EVENTS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = StickyNativeApp/StickyNative.entitlements;
 				CODE_SIGNING_ALLOWED = YES;
-					CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TB836R97BV;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -303,22 +310,29 @@
 		BA0000000000000000000704 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				AUTOMATION_APPLE_EVENTS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = StickyNativeApp/StickyNative.entitlements;
 				CODE_SIGNING_ALLOWED = YES;
-					CODE_SIGN_IDENTITY = "Developer ID Application";
-					CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
-					CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "Developer ID Application";
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TB836R97BV;
+				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
 				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";

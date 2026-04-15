@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>StickyNative Support</title>
+    <meta
+      name="description"
+      content="StickyNative は、macOS のメニューバーからすばやく使える軽量な付箋アプリです。使い方、ショートカット、サポート情報を掲載しています。"
+    >
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero card">
+        <p class="eyebrow">StickyNative</p>
+        <h1>macOS のメニューバーに置ける、軽量な付箋アプリ。</h1>
+        <p class="lead">
+          StickyNative は、必要なときにすぐ開いて書けることを重視した
+          macOS 用メモアプリです。メニューバー常駐、キーボードショートカット、
+          ローカル保存を中心に、作業の流れを止めない短いメモ体験を目指しています。
+        </p>
+        <div class="hero-actions">
+          <a class="button" href="https://github.com/SORA-localize/sticky-native" target="_blank" rel="noreferrer">GitHub Repository</a>
+          <a class="button secondary" href="./privacy.html">Privacy Policy</a>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>主な機能</h2>
+          <ul class="clean-list">
+            <li>メニューバーからすぐに新規メモを作成</li>
+            <li>グローバルショートカットで素早く呼び出し</li>
+            <li>メモ内容の自動保存と再起動後の復元</li>
+            <li>常時前面表示の切り替え</li>
+            <li>一覧画面での管理、ゴミ箱、復元、完全削除</li>
+            <li>セッションごとの整理</li>
+            <li>フォントサイズと新規メモサイズの設定</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>キーボードショートカット</h2>
+          <dl class="shortcut-list">
+            <div>
+              <dt>⌘ + ⌥ + Enter</dt>
+              <dd>新しいメモを作成</dd>
+            </div>
+            <div>
+              <dt>⌘ + S</dt>
+              <dd>保存</dd>
+            </div>
+            <div>
+              <dt>⌘ + Enter</dt>
+              <dd>保存して閉じる</dd>
+            </div>
+            <div>
+              <dt>⌘ + W</dt>
+              <dd>閉じる</dd>
+            </div>
+            <div>
+              <dt>⌘ + Delete</dt>
+              <dd>ゴミ箱に移す</dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>使い方</h2>
+        <ol class="steps">
+          <li>アプリを起動すると、メニューバーに StickyNative が表示されます。</li>
+          <li>メニューバーのメニュー、またはグローバルショートカットから新しいメモを作成できます。</li>
+          <li>入力した内容は自動保存されます。メモウィンドウ上では保存や保存して閉じるショートカットも使えます。</li>
+          <li>All Memos からすべてのメモを管理し、セッション分け、ゴミ箱への移動、復元、完全削除ができます。</li>
+        </ol>
+      </section>
+
+      <section class="card">
+        <h2>よくある質問</h2>
+        <div class="faq">
+          <div>
+            <h3>データはどこに保存されますか？</h3>
+            <p>
+              メモデータはこの Mac のローカルストレージに保存されます。
+              現在の実装では SQLite データベースを
+              <code>Application Support/StickyNative</code> 配下に作成し、
+              設定値は <code>UserDefaults</code> に保存します。
+            </p>
+          </div>
+          <div>
+            <h3>インターネット接続は必要ですか？</h3>
+            <p>
+              通常利用にインターネット接続は不要です。StickyNative はメモの作成、
+              保存、管理をローカルで完結する設計です。
+            </p>
+          </div>
+          <div>
+            <h3>ショートカットが動かない場合は？</h3>
+            <p>
+              macOS の環境や権限状態によっては挙動が変わることがあります。
+              まずアプリを再起動し、最新版を利用しているか確認してください。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>サポート</h2>
+          <p>
+            不具合報告や改善要望は、以下の GitHub リポジトリから受け付けています。
+          </p>
+          <p>
+            <a href="https://github.com/SORA-localize/sticky-native/issues" target="_blank" rel="noreferrer">
+              GitHub Issues を開く
+            </a>
+          </p>
+          <p class="muted">
+            問題を報告する際は、macOS のバージョン、再現手順、期待した動作、実際の動作を添えてください。
+          </p>
+        </article>
+
+        <article class="card">
+          <h2>公開情報</h2>
+          <ul class="clean-list">
+            <li>App Name: StickyNative</li>
+            <li>Platform: macOS</li>
+            <li>Category: Productivity</li>
+            <li>Privacy Policy: <a href="./privacy.html">こちら</a></li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
