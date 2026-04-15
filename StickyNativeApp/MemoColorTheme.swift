@@ -29,14 +29,6 @@ enum MemoColorTheme: Int, CaseIterable {
     baseColor.opacity(0.08)
   }
 
-  var borderColor: Color {
-    baseColor.opacity(0.16)
-  }
-
-  var whiteWashColor: Color {
-    Color.white.opacity(0.14)
-  }
-
   private var baseColor: Color {
     switch self {
     case .sand:

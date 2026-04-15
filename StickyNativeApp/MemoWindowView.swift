@@ -127,15 +127,16 @@ struct MemoWindowView: View {
       minWidth: MemoWindowController.minimumContentSize.width,
       minHeight: MemoWindowController.minimumContentSize.height
     )
-    .background(windowChromeBackground)
+    .background(.ultraThinMaterial)
+    .background(memo.colorTheme.chromeTintColor)
     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     .overlay(
       RoundedRectangle(cornerRadius: 18, style: .continuous)
-        .stroke(Color.white.opacity(0.24), lineWidth: 1)
-    )
-    .overlay(
-      RoundedRectangle(cornerRadius: 18, style: .continuous)
-        .stroke(memo.colorTheme.borderColor, lineWidth: 1)
+        .strokeBorder(
+          Color.white.opacity(0.18)
+            .blendMode(.plusLighter),
+          lineWidth: 1
+        )
     )
     .overlay(
       RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -175,19 +176,6 @@ struct MemoWindowView: View {
 
   private var closeBackgroundColor: Color {
     hoveredControl == .close ? Color(red: 0.96, green: 0.78, blue: 0.26).opacity(0.22) : Color.clear
-  }
-
-  private var windowChromeBackground: some View {
-    RoundedRectangle(cornerRadius: 18, style: .continuous)
-      .fill(.ultraThinMaterial)
-      .overlay(
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-          .fill(memo.colorTheme.whiteWashColor)
-      )
-      .overlay(
-        RoundedRectangle(cornerRadius: 18, style: .continuous)
-          .fill(memo.colorTheme.chromeTintColor)
-      )
   }
 }
 
