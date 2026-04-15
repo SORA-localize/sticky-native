@@ -105,11 +105,19 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     NSLog("[MemoWindowController] windowDidBecomeMain")
   }
 
+  static func isDraftEmpty(_ draft: String) -> Bool {
+    draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+  }
+
   func windowWillClose(_ notification: Notification) {
-    if !didExplicitFlush {
-      onFlush(memo.id, memo.draft)
+    if Self.isDraftEmpty(memo.draft) {
+      onClose(ClosedMemoRecord(memoID: memo.id, frame: nil, isAutoDelete: true))
+    } else {
+      if !didExplicitFlush {
+        onFlush(memo.id, memo.draft)
+      }
+      onClose(ClosedMemoRecord(memoID: memo.id, frame: window?.frame))
     }
-    onClose(ClosedMemoRecord(memoID: memo.id, frame: window?.frame))
   }
 
   var currentFrame: NSRect? {
@@ -141,8 +149,10 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       },
       onSaveAndClose: { [weak self] in
         guard let self else { return }
-        didExplicitFlush = true
-        onFlush(memo.id, memo.draft)
+        if !Self.isDraftEmpty(memo.draft) {
+          didExplicitFlush = true
+          onFlush(memo.id, memo.draft)
+        }
         window?.close()
       }
     )

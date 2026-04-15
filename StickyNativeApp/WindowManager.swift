@@ -3,6 +3,7 @@ import AppKit
 struct ClosedMemoRecord {
   let memoID: UUID
   let frame: NSRect?
+  var isAutoDelete: Bool = false
 }
 
 @MainActor
@@ -79,6 +80,10 @@ final class WindowManager {
   func restorePersistedOpenMemos() {
     let memos = coordinator.fetchOpenMemos()
     for persisted in memos {
+      if MemoWindowController.isDraftEmpty(persisted.draft) {
+        coordinator.permanentDelete(id: persisted.id)
+        continue
+      }
       let origin: NSPoint? = persisted.originX.flatMap { x in
         persisted.originY.map { y in NSPoint(x: x, y: y) }
       }
@@ -99,8 +104,12 @@ final class WindowManager {
   func prepareForTermination() {
     isTerminating = true
     for (_, controller) in openControllers {
-      scheduler.flush(id: controller.memo.id, draft: controller.memo.draft)
-      coordinator.saveWindowState(id: controller.memo.id, frame: controller.currentFrame, isOpen: true)
+      if MemoWindowController.isDraftEmpty(controller.memo.draft) {
+        coordinator.permanentDelete(id: controller.memo.id)
+      } else {
+        scheduler.flush(id: controller.memo.id, draft: controller.memo.draft)
+        coordinator.saveWindowState(id: controller.memo.id, frame: controller.currentFrame, isOpen: true)
+      }
     }
   }
 
@@ -174,7 +183,9 @@ final class WindowManager {
   private func handleWindowClose(record: ClosedMemoRecord) {
     openControllers.removeValue(forKey: record.memoID)
 
-    if trashedMemoIDs.contains(record.memoID) {
+    if record.isAutoDelete {
+      coordinator.permanentDelete(id: record.memoID)
+    } else if trashedMemoIDs.contains(record.memoID) {
       trashedMemoIDs.remove(record.memoID)
       closedMemoRecords.removeAll { $0.memoID == record.memoID }
       coordinator.trashMemo(id: record.memoID)

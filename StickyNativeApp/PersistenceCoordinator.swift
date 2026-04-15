@@ -49,6 +49,10 @@ final class PersistenceCoordinator {
     try? store.restore(id: id)
   }
 
+  func permanentDelete(id: UUID) {
+    try? store.permanentDelete(id: id)
+  }
+
   func emptyTrash() {
     try? store.emptyTrash()
   }
