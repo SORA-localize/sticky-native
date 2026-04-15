@@ -4,6 +4,9 @@ import SwiftUI
 
 @MainActor
 final class MemoWindowController: NSWindowController, NSWindowDelegate {
+  static let defaultContentSize = NSSize(width: 440, height: 300)
+  static let minimumContentSize = NSSize(width: 320, height: 220)
+
   let memo: MemoWindow
 
   private let onClose: (ClosedMemoRecord) -> Void
@@ -22,7 +25,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     origin: NSPoint?,
     size: NSSize? = nil,
     initiallyPinned: Bool = false,
-    appSettings: AppSettings = .shared,
+    appSettings: AppSettings,
     onDraftChange: @escaping (UUID, String) -> Void,
     onFlush: @escaping (UUID, String) -> Void,
     onPinChange: @escaping (UUID, Bool) -> Void,
@@ -39,7 +42,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     self.appSettings = appSettings
 
     let window = SeamlessWindow(
-      contentRect: NSRect(x: 0, y: 0, width: 440, height: 300),
+      contentRect: NSRect(origin: .zero, size: Self.defaultContentSize),
       styleMask: [.borderless, .resizable, .fullSizeContentView],
       backing: .buffered,
       defer: false
@@ -59,6 +62,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     window.isOpaque = false
     window.backgroundColor = .clear
     window.hasShadow = true
+    window.minSize = Self.minimumContentSize
     window.setFrameAutosaveName("MemoWindow-\(memo.id.uuidString)")
 
     if let size {
@@ -74,8 +78,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     draftCancellable = memo.$draft
       .dropFirst()
-      .sink { [weak self] draft in
-        guard let self else { return }
+      .sink { draft in
         onDraftChange(memo.id, draft)
       }
   }

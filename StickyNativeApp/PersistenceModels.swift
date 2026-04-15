@@ -8,6 +8,7 @@ struct PersistedMemo {
   let originY: Double?
   let width: Double?
   let height: Double?
+  let colorIndex: Int
   let isPinned: Bool
   let isOpen: Bool
   let isTrash: Bool

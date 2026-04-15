@@ -15,7 +15,7 @@ struct MemoEditorView: View {
       .padding(14)
       .background(
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-          .fill(Color.white.opacity(0.12))
+          .fill(memo.colorTheme.editorTintColor)
           .overlay(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
               .stroke(

@@ -8,6 +8,7 @@ final class AppSettings: ObservableObject {
     static let editorFontSize = "editorFontSize"
     static let defaultMemoWidth = "defaultMemoWidth"
     static let defaultMemoHeight = "defaultMemoHeight"
+    static let nextMemoColorIndex = "nextMemoColorIndex"
   }
 
   @Published var editorFontSize: Double {
@@ -22,6 +23,10 @@ final class AppSettings: ObservableObject {
     didSet { UserDefaults.standard.set(defaultMemoHeight, forKey: Keys.defaultMemoHeight) }
   }
 
+  @Published var nextMemoColorIndex: Int {
+    didSet { UserDefaults.standard.set(nextMemoColorIndex, forKey: Keys.nextMemoColorIndex) }
+  }
+
   private init() {
     let storedFontSize = UserDefaults.standard.double(forKey: Keys.editorFontSize)
     self.editorFontSize = storedFontSize > 0 ? storedFontSize : 16
@@ -31,5 +36,14 @@ final class AppSettings: ObservableObject {
 
     let storedHeight = UserDefaults.standard.double(forKey: Keys.defaultMemoHeight)
     self.defaultMemoHeight = storedHeight > 0 ? storedHeight : 300
+
+    let storedColorIndex = UserDefaults.standard.object(forKey: Keys.nextMemoColorIndex) as? Int
+    self.nextMemoColorIndex = MemoColorTheme.from(index: storedColorIndex ?? 0).colorIndex
+  }
+
+  func reserveNextMemoColorTheme() -> MemoColorTheme {
+    let theme = MemoColorTheme.from(index: nextMemoColorIndex)
+    nextMemoColorIndex = (theme.colorIndex + 1) % MemoColorTheme.allCases.count
+    return theme
   }
 }

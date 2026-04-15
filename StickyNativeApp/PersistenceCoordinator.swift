@@ -10,9 +10,9 @@ final class PersistenceCoordinator {
     self.sessionStore = SessionStore(store: store)
   }
 
-  func saveDraft(id: UUID, draft: String) {
+  func saveDraft(id: UUID, draft: String, colorIndex: Int) {
     let title = Self.generateTitle(from: draft)
-    try? store.upsertDraft(id: id, draft: draft, title: title)
+    try? store.upsertDraft(id: id, draft: draft, title: title, colorIndex: colorIndex)
   }
 
   static func generateTitle(from draft: String) -> String {

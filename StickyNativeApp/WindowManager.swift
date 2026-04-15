@@ -14,19 +14,18 @@ final class WindowManager {
   private var lastCascadeOrigin: NSPoint?
 
   private let coordinator: PersistenceCoordinator
-  private let scheduler: AutosaveScheduler
   private let appSettings: AppSettings
+  private lazy var scheduler = AutosaveScheduler { [weak self] id, draft in
+    self?.persistDraft(id: id, draft: draft)
+  }
 
   var onClosedStackChanged: (() -> Void)?
   private var isTerminating = false
   private var trashedMemoIDs: Set<UUID> = []
 
-  init(coordinator: PersistenceCoordinator, appSettings: AppSettings = .shared) {
+  init(coordinator: PersistenceCoordinator, appSettings: AppSettings) {
     self.coordinator = coordinator
     self.appSettings = appSettings
-    self.scheduler = AutosaveScheduler { [coordinator] id, draft in
-      coordinator.saveDraft(id: id, draft: draft)
-    }
   }
 
   var canReopenClosedMemo: Bool {
@@ -47,7 +46,11 @@ final class WindowManager {
       persisted.height.map { h in NSSize(width: w, height: h) }
     }
     coordinator.markOpen(id: id)
-    let memo = MemoWindow(id: id, draft: persisted.draft)
+    let memo = MemoWindow(
+      id: id,
+      draft: persisted.draft,
+      colorTheme: MemoColorTheme.from(index: persisted.colorIndex)
+    )
     let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
     openControllers[id] = controller
     controller.showAndFocusEditor()
@@ -90,7 +93,11 @@ final class WindowManager {
       let size: NSSize? = persisted.width.flatMap { w in
         persisted.height.map { h in NSSize(width: w, height: h) }
       }
-      let memo = MemoWindow(id: persisted.id, draft: persisted.draft)
+      let memo = MemoWindow(
+        id: persisted.id,
+        draft: persisted.draft,
+        colorTheme: MemoColorTheme.from(index: persisted.colorIndex)
+      )
       let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
       openControllers[memo.id] = controller
       controller.showAndFocusEditor()
@@ -114,7 +121,7 @@ final class WindowManager {
   }
 
   func createNewMemoWindow() {
-    let memo = MemoWindow()
+    let memo = MemoWindow(colorTheme: appSettings.reserveNextMemoColorTheme())
     let size = NSSize(width: appSettings.defaultMemoWidth, height: appSettings.defaultMemoHeight)
     let controller = makeController(for: memo, size: size)
     openControllers[memo.id] = controller
@@ -140,7 +147,11 @@ final class WindowManager {
     let isPinned = persisted?.isPinned ?? false
 
     coordinator.markOpen(id: record.memoID)
-    let memo = MemoWindow(id: record.memoID, draft: draft)
+    let memo = MemoWindow(
+      id: record.memoID,
+      draft: draft,
+      colorTheme: MemoColorTheme.from(index: persisted?.colorIndex ?? MemoColorTheme.fallback.colorIndex)
+    )
     let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: isPinned)
     openControllers[memo.id] = controller
     controller.showAndFocusEditor()
@@ -231,5 +242,12 @@ final class WindowManager {
       x: lastCascadeOrigin.x + cascadeStep.width,
       y: lastCascadeOrigin.y - cascadeStep.height
     )
+  }
+
+  private func persistDraft(id: UUID, draft: String) {
+    let colorIndex = openControllers[id]?.memo.colorTheme.colorIndex
+      ?? coordinator.fetchMemo(id: id)?.colorIndex
+      ?? MemoColorTheme.fallback.colorIndex
+    coordinator.saveDraft(id: id, draft: draft, colorIndex: colorIndex)
   }
 }

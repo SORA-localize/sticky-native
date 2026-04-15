@@ -26,7 +26,7 @@ struct MemoWindowView: View {
       HStack(spacing: 12) {
         HStack(spacing: 10) {
           Circle()
-            .fill(Color.white.opacity(0.55))
+            .fill(memo.colorTheme.headerDotColor)
             .frame(width: 10, height: 10)
 
           Text(memo.title)
@@ -123,12 +123,20 @@ struct MemoWindowView: View {
           .frame(width: 0, height: 0)
       }
     }
-    .frame(minWidth: 420, minHeight: 280)
+    .frame(
+      minWidth: MemoWindowController.minimumContentSize.width,
+      minHeight: MemoWindowController.minimumContentSize.height
+    )
     .background(.ultraThinMaterial)
+    .background(memo.colorTheme.chromeTintColor)
     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     .overlay(
       RoundedRectangle(cornerRadius: 18, style: .continuous)
-        .stroke(Color.white.opacity(0.35), lineWidth: 1)
+        .stroke(Color.white.opacity(0.24), lineWidth: 1)
+    )
+    .overlay(
+      RoundedRectangle(cornerRadius: 18, style: .continuous)
+        .stroke(memo.colorTheme.borderColor, lineWidth: 1)
     )
     .overlay(
       RoundedRectangle(cornerRadius: 18, style: .continuous)
