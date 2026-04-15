@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct MemoWindowView: View {
+  private let controlHitSize = CGSize(width: 34, height: 34)
+
   private enum HoveredControl {
     case pin
     case trash
@@ -40,9 +42,11 @@ struct MemoWindowView: View {
           Image(systemName: uiState.isPinned ? "pin.fill" : "pin")
             .font(.system(size: 12, weight: .semibold))
             .frame(width: 28, height: 28)
+            .frame(width: controlHitSize.width, height: controlHitSize.height)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .foregroundStyle(hoveredControl == .pin ? Color.primary : Color.primary.opacity(0.88))
+        .foregroundStyle(pinForegroundColor)
         .background(pinBackgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .scaleEffect(hoveredControl == .pin ? 1.04 : 1.0)
@@ -54,6 +58,8 @@ struct MemoWindowView: View {
           Image(systemName: "trash")
             .font(.system(size: 11, weight: .semibold))
             .frame(width: 28, height: 28)
+            .frame(width: controlHitSize.width, height: controlHitSize.height)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
         .foregroundStyle(hoveredControl == .trash ? Color.red.opacity(0.85) : Color.primary.opacity(0.55))
@@ -68,9 +74,11 @@ struct MemoWindowView: View {
           Image(systemName: "xmark")
             .font(.system(size: 11, weight: .bold))
             .frame(width: 28, height: 28)
+            .frame(width: controlHitSize.width, height: controlHitSize.height)
+            .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }
         .buttonStyle(.plain)
-        .foregroundStyle(hoveredControl == .close ? Color.primary : Color.primary.opacity(0.88))
+        .foregroundStyle(closeForegroundColor)
         .background(closeBackgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .scaleEffect(hoveredControl == .close ? 1.04 : 1.0)
@@ -134,16 +142,32 @@ struct MemoWindowView: View {
     }
   }
 
-  private var pinBackgroundColor: Color {
-    if uiState.isPinned {
-      return Color.white.opacity(hoveredControl == .pin ? 0.38 : 0.30)
+  private var pinForegroundColor: Color {
+    if uiState.isPinned || hoveredControl == .pin {
+      return Color(red: 0.10, green: 0.48, blue: 0.60)
     }
 
-    return hoveredControl == .pin ? Color.white.opacity(0.18) : Color.clear
+    return Color.primary.opacity(0.82)
+  }
+
+  private var pinBackgroundColor: Color {
+    if uiState.isPinned {
+      return Color(red: 0.31, green: 0.79, blue: 0.90).opacity(hoveredControl == .pin ? 0.24 : 0.18)
+    }
+
+    return hoveredControl == .pin ? Color(red: 0.31, green: 0.79, blue: 0.90).opacity(0.16) : Color.clear
+  }
+
+  private var closeForegroundColor: Color {
+    if hoveredControl == .close {
+      return Color(red: 0.73, green: 0.50, blue: 0.06)
+    }
+
+    return Color.primary.opacity(0.88)
   }
 
   private var closeBackgroundColor: Color {
-    hoveredControl == .close ? Color.white.opacity(0.24) : Color.white.opacity(0.14)
+    hoveredControl == .close ? Color(red: 0.96, green: 0.78, blue: 0.26).opacity(0.22) : Color.clear
   }
 }
 
