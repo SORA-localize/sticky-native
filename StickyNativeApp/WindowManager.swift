@@ -121,7 +121,7 @@ final class WindowManager {
   }
 
   func createNewMemoWindow() {
-    let memo = MemoWindow(colorTheme: appSettings.reserveNextMemoColorTheme())
+    let memo = MemoWindow(colorTheme: appSettings.makeNewMemoColorTheme())
     let size = NSSize(width: appSettings.defaultMemoWidth, height: appSettings.defaultMemoHeight)
     let controller = makeController(for: memo, size: size)
     openControllers[memo.id] = controller

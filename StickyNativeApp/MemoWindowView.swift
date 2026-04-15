@@ -131,12 +131,19 @@ struct MemoWindowView: View {
     .background(memo.colorTheme.chromeTintColor)
     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     .overlay(
-      RoundedRectangle(cornerRadius: 18, style: .continuous)
-        .strokeBorder(
-          Color.white.opacity(0.18)
-            .blendMode(.plusLighter),
-          lineWidth: 1
-        )
+      Group {
+        if memo.colorTheme.usesPlainBorderStyle {
+          RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .stroke(Color.white.opacity(0.35), lineWidth: 1)
+        } else {
+          RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .strokeBorder(
+              Color.white.opacity(0.18)
+                .blendMode(.plusLighter),
+              lineWidth: 1
+            )
+        }
+      }
     )
     .overlay(
       RoundedRectangle(cornerRadius: 18, style: .continuous)

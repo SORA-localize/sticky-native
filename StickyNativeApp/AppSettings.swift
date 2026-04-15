@@ -1,5 +1,16 @@
 import Foundation
 
+enum MemoColorMode: Int, CaseIterable {
+  case `default` = 0
+  case colorful = 1
+
+  static let fallback: MemoColorMode = .default
+
+  static func from(rawValue: Int) -> MemoColorMode {
+    MemoColorMode(rawValue: rawValue) ?? fallback
+  }
+}
+
 @MainActor
 final class AppSettings: ObservableObject {
   static let shared = AppSettings()
@@ -9,6 +20,7 @@ final class AppSettings: ObservableObject {
     static let defaultMemoWidth = "defaultMemoWidth"
     static let defaultMemoHeight = "defaultMemoHeight"
     static let nextMemoColorIndex = "nextMemoColorIndex"
+    static let memoColorMode = "memoColorMode"
   }
 
   @Published var editorFontSize: Double {
@@ -27,6 +39,10 @@ final class AppSettings: ObservableObject {
     didSet { UserDefaults.standard.set(nextMemoColorIndex, forKey: Keys.nextMemoColorIndex) }
   }
 
+  @Published var memoColorMode: MemoColorMode {
+    didSet { UserDefaults.standard.set(memoColorMode.rawValue, forKey: Keys.memoColorMode) }
+  }
+
   private init() {
     let storedFontSize = UserDefaults.standard.double(forKey: Keys.editorFontSize)
     self.editorFontSize = storedFontSize > 0 ? storedFontSize : 16
@@ -39,11 +55,19 @@ final class AppSettings: ObservableObject {
 
     let storedColorIndex = UserDefaults.standard.object(forKey: Keys.nextMemoColorIndex) as? Int
     self.nextMemoColorIndex = MemoColorTheme.from(index: storedColorIndex ?? 0).colorIndex
+
+    let storedMemoColorMode = UserDefaults.standard.object(forKey: Keys.memoColorMode) as? Int
+    self.memoColorMode = MemoColorMode.from(rawValue: storedMemoColorMode ?? MemoColorMode.fallback.rawValue)
   }
 
-  func reserveNextMemoColorTheme() -> MemoColorTheme {
-    let theme = MemoColorTheme.from(index: nextMemoColorIndex)
-    nextMemoColorIndex = (theme.colorIndex + 1) % MemoColorTheme.allCases.count
-    return theme
+  func makeNewMemoColorTheme() -> MemoColorTheme {
+    switch memoColorMode {
+    case .default:
+      return .plain
+    case .colorful:
+      let theme = MemoColorTheme.from(index: nextMemoColorIndex)
+      nextMemoColorIndex = (theme.colorIndex + 1) % MemoColorTheme.colorfulCases.count
+      return theme
+    }
   }
 }

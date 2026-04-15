@@ -21,6 +21,10 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   private let memoMediumItem = NSMenuItem(title: "中", action: #selector(setMemoMedium), keyEquivalent: "")
   private let memoLargeItem  = NSMenuItem(title: "大", action: #selector(setMemoLarge),  keyEquivalent: "")
 
+  // Memo Color submenu
+  private let memoColorDefaultItem  = NSMenuItem(title: "デフォルト", action: #selector(setMemoColorDefault), keyEquivalent: "")
+  private let memoColorColorfulItem = NSMenuItem(title: "カラフル", action: #selector(setMemoColorColorful), keyEquivalent: "")
+
   private let appSettings: AppSettings
 
   var onNewMemo: (() -> Void)?
@@ -41,6 +45,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
       newMemoItem, allMemosItem, reopenItem, shortcutsItem, quitItem,
       fontSmallItem, fontMediumItem, fontLargeItem,
       memoSmallItem, memoMediumItem, memoLargeItem,
+      memoColorDefaultItem, memoColorColorfulItem,
     ]
     allItems.forEach { $0.target = self }
 
@@ -55,6 +60,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     memoSizeMenu.items = [memoSmallItem, memoMediumItem, memoLargeItem]
     let memoSizeParent = NSMenuItem(title: "Memo Size", action: nil, keyEquivalent: "")
     memoSizeParent.submenu = memoSizeMenu
+
+    let memoColorMenu = NSMenu()
+    memoColorMenu.items = [memoColorDefaultItem, memoColorColorfulItem]
+    let memoColorParent = NSMenuItem(title: "Memo Color", action: nil, keyEquivalent: "")
+    memoColorParent.submenu = memoColorMenu
 
     // Hotkeys submenu（表示のみ）
     let hotkeyItem = NSMenuItem(title: "新規メモ作成    ⌘ + ⌥ + Enter", action: nil, keyEquivalent: "")
@@ -75,6 +85,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
       sectionHeader("Settings"),
       fontSizeParent,
       memoSizeParent,
+      memoColorParent,
       hotkeysParent,
       NSMenuItem.separator(),
       shortcutsItem,
@@ -110,6 +121,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     memoSmallItem.state  = (w == 360 && h == 240) ? .on : .off
     memoMediumItem.state = (w == 440 && h == 300) ? .on : .off
     memoLargeItem.state  = (w == 560 && h == 380) ? .on : .off
+
+    memoColorDefaultItem.state = appSettings.memoColorMode == .default ? .on : .off
+    memoColorColorfulItem.state = appSettings.memoColorMode == .colorful ? .on : .off
   }
 
   private func sectionHeader(_ title: String) -> NSMenuItem {
@@ -134,6 +148,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   @objc private func setMemoSmall()  { appSettings.defaultMemoWidth = 360; appSettings.defaultMemoHeight = 240; updateCheckmarks() }
   @objc private func setMemoMedium() { appSettings.defaultMemoWidth = 440; appSettings.defaultMemoHeight = 300; updateCheckmarks() }
   @objc private func setMemoLarge()  { appSettings.defaultMemoWidth = 560; appSettings.defaultMemoHeight = 380; updateCheckmarks() }
+
+  @objc private func setMemoColorDefault()  { appSettings.memoColorMode = .default; updateCheckmarks() }
+  @objc private func setMemoColorColorful() { appSettings.memoColorMode = .colorful; updateCheckmarks() }
 
   @objc private func handleNewMemo()      { onNewMemo?() }
   @objc private func handleOpenHome()     { onOpenHome?() }

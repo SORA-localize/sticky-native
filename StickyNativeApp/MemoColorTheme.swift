@@ -1,6 +1,7 @@
 import SwiftUI
 
 enum MemoColorTheme: Int, CaseIterable {
+  case plain = -1
   case sand = 0
   case mint = 1
   case sky = 2
@@ -8,6 +9,7 @@ enum MemoColorTheme: Int, CaseIterable {
   case slate = 4
 
   static let fallback: MemoColorTheme = .sand
+  static let colorfulCases: [MemoColorTheme] = [.sand, .mint, .sky, .coral, .slate]
 
   static func from(index: Int) -> MemoColorTheme {
     MemoColorTheme(rawValue: index) ?? fallback
@@ -18,19 +20,40 @@ enum MemoColorTheme: Int, CaseIterable {
   }
 
   var headerDotColor: Color {
-    baseColor.opacity(0.78)
+    switch self {
+    case .plain:
+      return Color.white.opacity(0.55)
+    default:
+      return baseColor.opacity(0.78)
+    }
   }
 
   var chromeTintColor: Color {
-    baseColor.opacity(0.11)
+    switch self {
+    case .plain:
+      return .clear
+    default:
+      return baseColor.opacity(0.11)
+    }
   }
 
   var editorTintColor: Color {
-    baseColor.opacity(0.08)
+    switch self {
+    case .plain:
+      return Color.white.opacity(0.12)
+    default:
+      return baseColor.opacity(0.08)
+    }
+  }
+
+  var usesPlainBorderStyle: Bool {
+    self == .plain
   }
 
   private var baseColor: Color {
     switch self {
+    case .plain:
+      return .clear
     case .sand:
       return Color(red: 0.88, green: 0.78, blue: 0.63)
     case .mint:

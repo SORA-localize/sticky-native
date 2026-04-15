@@ -7,6 +7,7 @@ struct SettingsView: View {
   enum SettingsSection: String, CaseIterable, Identifiable {
     case font = "Font Size"
     case memo = "Memo Size"
+    case memoColor = "Memo Color"
     case hotkeys = "Hotkeys"
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ struct SettingsView: View {
       switch self {
       case .font:    return "textformat.size"
       case .memo:    return "rectangle.expand.vertical"
+      case .memoColor: return "paintpalette"
       case .hotkeys: return "keyboard"
       }
     }
@@ -31,6 +33,7 @@ struct SettingsView: View {
         switch selection {
         case .font:    FontSizeSettings()
         case .memo:    MemoSizeSettings()
+        case .memoColor: MemoColorSettings()
         case .hotkeys: HotkeysSettings()
         case nil:      FontSizeSettings()
         }
@@ -104,6 +107,38 @@ private struct MemoSizeSettings: View {
       Text("\(Int(appSettings.defaultMemoWidth)) × \(Int(appSettings.defaultMemoHeight)) pt")
         .font(.system(size: 12))
         .foregroundStyle(.secondary)
+    }
+  }
+}
+
+private struct MemoColorSettings: View {
+  @EnvironmentObject var appSettings: AppSettings
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      Text("新規メモのカラー")
+        .font(.headline)
+
+      Picker("", selection: $appSettings.memoColorMode) {
+        Text("デフォルト").tag(MemoColorMode.default)
+        Text("カラフル").tag(MemoColorMode.colorful)
+      }
+      .pickerStyle(.segmented)
+      .labelsHidden()
+      .frame(width: 220)
+
+      Text(description)
+        .font(.system(size: 12))
+        .foregroundStyle(.secondary)
+    }
+  }
+
+  private var description: String {
+    switch appSettings.memoColorMode {
+    case .default:
+      return "新規メモを標準カラーで固定します。"
+    case .colorful:
+      return "新規メモを複数カラーで順番に作成します。"
     }
   }
 }
