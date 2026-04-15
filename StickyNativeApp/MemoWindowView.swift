@@ -127,8 +127,7 @@ struct MemoWindowView: View {
       minWidth: MemoWindowController.minimumContentSize.width,
       minHeight: MemoWindowController.minimumContentSize.height
     )
-    .background(.ultraThinMaterial)
-    .background(memo.colorTheme.chromeTintColor)
+    .background(windowChromeBackground)
     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     .overlay(
       RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -176,6 +175,19 @@ struct MemoWindowView: View {
 
   private var closeBackgroundColor: Color {
     hoveredControl == .close ? Color(red: 0.96, green: 0.78, blue: 0.26).opacity(0.22) : Color.clear
+  }
+
+  private var windowChromeBackground: some View {
+    RoundedRectangle(cornerRadius: 18, style: .continuous)
+      .fill(.ultraThinMaterial)
+      .overlay(
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+          .fill(memo.colorTheme.whiteWashColor)
+      )
+      .overlay(
+        RoundedRectangle(cornerRadius: 18, style: .continuous)
+          .fill(memo.colorTheme.chromeTintColor)
+      )
   }
 }
 
