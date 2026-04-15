@@ -8,6 +8,19 @@
 
 本計画は以下を上位文書として参照する。
 
+### 移行元 SSOT（最優先）
+
+- `/Users/hori/Desktop/Sticky/migration/README.md`
+- `/Users/hori/Desktop/Sticky/migration/01_product_decision.md`
+- `/Users/hori/Desktop/Sticky/migration/02_ux_principles.md`
+- `/Users/hori/Desktop/Sticky/migration/04_technical_decision.md`
+- `/Users/hori/Desktop/Sticky/migration/06_roadmap.md`
+- `/Users/hori/Desktop/Sticky/migration/07_project_bootstrap.md`
+- `/Users/hori/Desktop/Sticky/migration/08_human_checklist.md`
+- `/Users/hori/Desktop/Sticky/migration/09_seamless_ux_spec.md`
+
+### ローカル SSOT 補助
+
 - `docs/product/ux-principles.md`
 - `docs/product/mvp-scope.md`
 - `docs/architecture/technical-decision.md`
@@ -58,17 +71,27 @@
 
 ## 技術詳細確認
 
-### 空判定の定義と置き場
+### 空判定の定義と置き場（DRY 方針）
+
+判定式の定義元を **`MemoWindowController` の static メソッド 1 箇所** に固定する。
 
 ```swift
-// MemoWindowController 内のプライベートヘルパー
-private var isDraftEmpty: Bool {
-    memo.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+// MemoWindowController.swift
+static func isDraftEmpty(_ draft: String) -> Bool {
+    draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 }
 ```
 
-空判定の **ownership は MemoWindowController**（close 時）と **WindowManager**（起動・終了時）の 2 箇所に限定する。  
-`WindowManager` 側は `PersistedMemo.draft` を直接読めるため、同じ trim ロジックをインラインで使う。
+各経路はこのメソッドを呼ぶだけにする。
+
+| 経路 | 呼び出し |
+|---|---|
+| `windowWillClose` | `Self.isDraftEmpty(memo.draft)` |
+| `onSaveAndClose` クロージャ | `MemoWindowController.isDraftEmpty(memo.draft)` |
+| `restorePersistedOpenMemos` | `MemoWindowController.isDraftEmpty(persisted.draft)` |
+| `prepareForTermination` | `MemoWindowController.isDraftEmpty(controller.memo.draft)` |
+
+これにより A-01 の「分散による取りこぼし」を防ぐ。判定閾値を変更する場合は 1 箇所だけ直せばよい。
 
 ### イベント経路と空メモの扱い
 
@@ -103,7 +126,7 @@ func permanentDelete(id: UUID) {
 | 空判定 | `MemoWindowController`（close 時） / `WindowManager`（起動・終了時） |
 | 永続削除 | `PersistenceCoordinator.permanentDelete` |
 | Reopen スタック管理 | `WindowManager.handleWindowClose`（`isAutoDelete` で除外） |
-| Home 一覧への反映 | `HomeViewModel.reload()` — 削除後は次回 reload で消える（今回追加不要） |
+| Home 一覧への反映 | close 経路では `handleWindowClose` → `onClosedStackChanged?()` → `homeWindowController.viewModel.reload()` が即時に走る（`AppDelegate.swift:50`）。起動時クリーンは Home ウィンドウ表示前のため reload 不要。終了時はアプリ終了中のため UI 更新不要。 |
 
 ---
 
@@ -171,7 +194,7 @@ func permanentDelete(id: UUID) {
 |---|---|---|
 | `closedMemoRecords` | `isAutoDelete` メモが Reopen に混入しないか | `handleWindowClose` で `isAutoDelete` 時は append しない |
 | `AutosaveScheduler` | 空メモがスケジュール済みの場合、終了時に flush されるか | `prepareForTermination` で空判定を先行させ、flush をスキップ |
-| Home 一覧 | 空メモ削除後に stale データが残るか | `HomeViewModel.reload()` は次回 open 時に呼ばれるため問題なし |
+| Home 一覧 | 空メモ削除後に stale データが残るか | close 経路では `handleWindowClose` → `onClosedStackChanged?()` → `viewModel.reload()` が即時に走るため、削除と同時に Home 一覧から消える（`AppDelegate.swift:47`） |
 | session 整合 | `permanentDelete` で session との外部キー整合は崩れないか | `session_id` は `REFERENCES sessions(id)` の参照のみで CASCADE 設定なし。memo 行が消えるだけで sessions テーブルは無変更 |
 | `isAutoDelete` フラグのデフォルト | 既存の close パスがすべて `isAutoDelete=false` になるか | デフォルト値 `false` で後方互換を維持 |
 
@@ -182,3 +205,4 @@ func permanentDelete(id: UUID) {
 | 日付 | 内容 |
 |---|---|
 | 2026-04-15 | 初版作成（planning guide 未準拠の仕様メモを全面改訂） |
+| 2026-04-15 | SSOT に migration 側必須文書を追加、空判定 DRY 方針を static メソッドに一本化、Home reload 経路を経路別に明記 |
