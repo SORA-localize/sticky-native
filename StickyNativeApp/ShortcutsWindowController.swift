@@ -42,12 +42,12 @@ private struct ShortcutsView: View {
           row(key: "⌘ + S",     label: "保存",             theme: .save)
           row(key: "⌘ + Enter", label: "保存して閉じる",    theme: .saveAndClose)
           row(key: "⌘ + W",     label: "閉じる",            theme: .close)
-          row(key: "⌘ + ⌫",    label: "ゴミ箱に移す（確認あり）", theme: .trash)
+          row(key: "⌘ + ⌫",    label: "ゴミ箱に移す", theme: .trash)
         }
 
         section("ヘッダボタン") {
-          row(icon: "pin",   label: "常時前面 ON / OFF")
-          row(icon: "trash", label: "ゴミ箱に移す（確認あり）")
+          row(icon: "pin",   label: "常時前面 ON / OFF", key: "⌘ + P")
+          row(icon: "trash", label: "ゴミ箱に移す")
           row(icon: "xmark", label: "閉じる（自動保存）")
         }
       }
@@ -87,7 +87,7 @@ private struct ShortcutsView: View {
     }
   }
 
-  private func row(icon: String, label: String) -> some View {
+  private func row(icon: String, label: String, key: String? = nil) -> some View {
     HStack(spacing: 10) {
       Image(systemName: icon)
         .frame(width: 16)
@@ -95,6 +95,15 @@ private struct ShortcutsView: View {
       Text(label)
         .font(.system(size: 13))
       Spacer()
+      if let key {
+        Text(key)
+          .font(.system(size: 12, design: .monospaced))
+          .foregroundStyle(.secondary)
+          .padding(.horizontal, 6)
+          .padding(.vertical, 2)
+          .background(Color(NSColor.controlBackgroundColor))
+          .clipShape(RoundedRectangle(cornerRadius: 4))
+      }
     }
   }
 }

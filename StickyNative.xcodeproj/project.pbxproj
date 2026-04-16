@@ -33,8 +33,8 @@
 		BA0000000000000000000127 /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000028 /* SettingsWindowController.swift */; };
 		BA0000000000000000000128 /* ShortcutsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000029 /* ShortcutsWindowController.swift */; };
 		BA0000000000000000000130 /* CommandTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000131 /* CommandTheme.swift */; };
-		BA0000000000000000000134 /* MemoColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000135 /* MemoColorTheme.swift */; };
 		BA0000000000000000000132 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000133 /* Assets.xcassets */; };
+		BA0000000000000000000134 /* MemoColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000135 /* MemoColorTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,8 +65,8 @@
 		BA0000000000000000000028 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000029 /* ShortcutsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsWindowController.swift; sourceTree = "<group>"; };
 		BA0000000000000000000131 /* CommandTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandTheme.swift; sourceTree = "<group>"; };
-		BA0000000000000000000135 /* MemoColorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoColorTheme.swift; sourceTree = "<group>"; };
 		BA0000000000000000000133 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BA0000000000000000000135 /* MemoColorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoColorTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -269,11 +269,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				AUTOMATION_APPLE_EVENTS = NO;
-				CODE_SIGN_ENTITLEMENTS = StickyNativeApp/StickyNative.entitlements;
 				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_ENTITLEMENTS = StickyNativeApp/StickyNative.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TB836R97BV;
 				ENABLE_APP_SANDBOX = YES;
@@ -291,11 +291,12 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hori.StickyNative;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -316,12 +317,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				AUTOMATION_APPLE_EVENTS = NO;
-				CODE_SIGN_ENTITLEMENTS = StickyNativeApp/StickyNative.entitlements;
 				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_ENTITLEMENTS = StickyNativeApp/StickyNative.entitlements;
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				CODE_SIGN_STYLE = Manual;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = TB836R97BV;
 				ENABLE_APP_SANDBOX = YES;
@@ -339,11 +340,12 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = StickyNative;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.1.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.6;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.hori.StickyNative;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

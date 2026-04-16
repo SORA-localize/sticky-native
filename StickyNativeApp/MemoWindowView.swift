@@ -121,6 +121,9 @@ struct MemoWindowView: View {
         }) { EmptyView() }
           .keyboardShortcut("w", modifiers: .command)
           .frame(width: 0, height: 0)
+        Button(action: onPinToggle) { EmptyView() }
+          .keyboardShortcut("p", modifiers: .command)
+          .frame(width: 0, height: 0)
       }
     }
     .frame(
