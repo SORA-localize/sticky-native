@@ -119,7 +119,8 @@
 - NSTextView lifecycle、focus、menu、keyboard event は持たない
 - SQLite / PersistenceCoordinator には触れない
 - Date / time operation は `Date` を引数で受け取り、内部で現在時刻を取得しない
-- `Date.now` の取得は `CheckableTextView` 側の command dispatch または薄い adapter で行い、`EditorTextOperations` には渡された `Date` の formatting だけを置く
+- `Date.now` の取得は `EditorCommandAdapter` 相当の薄い adapter で行い、`CheckableTextView` は現在時刻を取得しない
+- `EditorTextOperations` には adapter から渡された `Date` の formatting だけを置く
 
 `ShortcutsWindowController.swift`:
 
