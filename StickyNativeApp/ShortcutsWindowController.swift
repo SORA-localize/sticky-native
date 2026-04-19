@@ -43,6 +43,7 @@ private struct ShortcutsView: View {
           row(key: "⌘ + Enter", label: "保存して閉じる",    theme: .saveAndClose)
           row(key: "⌘ + W",     label: "閉じる",            theme: .close)
           row(key: "⌘ + ⌫",    label: "ゴミ箱に移す", theme: .trash)
+          row(key: "⌘ + L",     label: "チェックボックス切り替え")
         }
 
         section("ヘッダボタン") {
