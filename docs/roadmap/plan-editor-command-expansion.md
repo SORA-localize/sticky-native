@@ -115,10 +115,11 @@
 
 `EditorTextOperations.swift`:
 
-- `String` / `NSString` / `NSRange` を入力として、replacement string と replacement range を返す pure operation を持つ
+- `String` / `NSString` / `NSRange` / command context を入力として、replacement string と replacement range を返す pure operation を持つ
 - NSTextView lifecycle、focus、menu、keyboard event は持たない
 - SQLite / PersistenceCoordinator には触れない
-- Date / time 生成は Phase 7-2 でここに置く
+- Date / time operation は `Date` を引数で受け取り、内部で現在時刻を取得しない
+- `Date.now` の取得は `CheckableTextView` 側の command dispatch または薄い adapter で行い、`EditorTextOperations` には渡された `Date` の formatting だけを置く
 
 `ShortcutsWindowController.swift`:
 
@@ -365,7 +366,7 @@ Gate:
 - Home / Trash / Session の管理 UI と衝突しない
 - command list に追加済み shortcut が反映されている
 - command label / shortcut / context menu order の SSOT が `EditorCommand` に集約されている
-- command の text operation 本体が `EditorTextOperations` に集約されている
+- Phase 7-2 完了時点で、command の text operation 本体が `EditorTextOperations` に集約されている
 
 ---
 
