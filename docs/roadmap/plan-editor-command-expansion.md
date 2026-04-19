@@ -49,13 +49,20 @@
 - `StickyNativeApp/CheckableTextView.swift`
 - `StickyNativeApp/MemoEditorView.swift`
 - `StickyNativeApp/ShortcutsWindowController.swift`
-- `StickyNativeApp/AppSettings.swift`（日付表示設定を入れる場合のみ）
-- `docs/roadmap/roadmap.md`（Phase 番号を確定する場合のみ）
 
-新規候補:
+今回触らない:
+
+- `StickyNativeApp/AppSettings.swift`
+  - date / datetime format は本計画内で固定し、ユーザー設定は追加しない
+- `docs/roadmap/roadmap.md`
+  - Phase 7 を正式ロードマップへ昇格する判断までは、本計画書を詳細計画として扱う
+
+新規:
 
 - `StickyNativeApp/EditorCommand.swift`
-  - editor command の enum / label / shortcut / 実行単位を分離する場合のみ追加
+  - editor command の enum / label / shortcut / context menu order を保持する
+- `StickyNativeApp/EditorTextOperations.swift`
+  - editor command の text operation を分離する
 
 スキーマ変更:
 
@@ -86,7 +93,8 @@
 
 - `NSTextView` の生成、focus、first mouse、クリック位置、キーイベントを扱う
 - 既存の `@Binding<String>` に text change を戻す
-- 各 command の低レベル text operation を呼び出す
+- `EditorCommand` を dispatch し、`EditorTextOperations` の結果を NSTextStorage に適用する
+- command ごとの行変換ロジックは持たない
 
 `EditorCommand.swift`:
 
@@ -99,7 +107,18 @@
 
 - Phase 7-1 の時点で `EditorCommand.swift` を追加し、checkbox command も含めて command metadata を移す
 - 2 個目の command family（Phase 7-2 date / time）へ進む前に、command 表示 SSOT が `EditorCommand` に集約されていることを Gate とする
-- text operation 本体は `CheckableTextView` 側または別 helper に残してよいが、表示名・shortcut・context menu 順序は分散させない
+- Phase 7-1 の時点では既存 `toggleCheckbox` operation を一時的に `CheckableTextView` 内へ残してよい
+- Phase 7-2 着手前に `EditorTextOperations.swift` を追加し、`toggleCheckbox`, `insertDate`, `insertDateTime` を移す
+- Phase 7-2 以降、行単位変換や文字列挿入の本体を `CheckableTextView` に追加しない
+- Phase 7-3 以降の `moveCompletedLinesDown`, `clearCompletedLines`, `toggleBulletList` は最初から `EditorTextOperations` に実装する
+- `CheckableTextView` は selection / range 抽出、operation 呼び出し、NSTextStorage への適用だけを担当する
+
+`EditorTextOperations.swift`:
+
+- `String` / `NSString` / `NSRange` を入力として、replacement string と replacement range を返す pure operation を持つ
+- NSTextView lifecycle、focus、menu、keyboard event は持たない
+- SQLite / PersistenceCoordinator には触れない
+- Date / time 生成は Phase 7-2 でここに置く
 
 `ShortcutsWindowController.swift`:
 
@@ -201,6 +220,8 @@ Gate:
 - 既存 `⌘L` と同じ処理を呼ぶ
 - `EditorCommand.swift` を追加し、command metadata の SSOT にする
 - `toggleCheckbox` の表示名、shortcut、context menu 表示順を `EditorCommand` に移す
+- 既存 `toggleCheckbox` text operation は Phase 7-1 では `CheckableTextView` 内に残してよい
+- Phase 7-2 の前提として `EditorTextOperations.swift` へ移す
 
 Gate:
 
@@ -209,6 +230,7 @@ Gate:
 - `⌘L` と右クリックが同じ結果になる
 - `ShortcutsWindowController` の checkbox 表示が `EditorCommand` の metadata と一致している
 - Phase 7-2 へ進む前に、追加 command の label / shortcut / context menu order を `EditorCommand` に集約済み
+- Phase 7-2 へ進む前に、checkbox text operation を `EditorTextOperations` へ移す作業項目が残タスクとして明示されている
 
 ### Phase 7-2: Date / Time Insert
 
@@ -221,6 +243,7 @@ Gate:
 - `CheckableTextView.swift`
 - `ShortcutsWindowController.swift`
 - `EditorCommand.swift`
+- `EditorTextOperations.swift`（新規）
 
 実装内容:
 
@@ -228,17 +251,21 @@ Gate:
 - `Insert Date Time`: `YYYY-MM-DD HH:mm`
 - date / datetime は `Calendar(identifier: .gregorian)`, `TimeZone.current`, `Locale(identifier: "en_US_POSIX")` で生成する
 - 表記は 24 時間制に固定する
-- ショートカット候補:
+- 採用 shortcut:
   - `⌘D`: date
   - `⌘⇧D`: datetime
+- shortcut conflict が実機確認で見つかった場合は、その command の shortcut を割り当てず context menu のみにする
 - context menu からも実行可能にする
+- Phase 7-2 着手時に `toggleCheckbox`, `insertDate`, `insertDateTime` を `EditorTextOperations` に集約する
 
 Gate:
 
+- `EditorTextOperations.swift` が追加され、`CheckableTextView` から checkbox / date / datetime の text operation 本体が分離されている
 - カーソル位置に挿入される
 - 選択範囲がある場合は選択範囲を置換する
 - autosave に乗る
 - 日本語 IME 変換中に誤挿入しない
+- `⌘D` / `⌘⇧D` が既存 app shortcut と競合しない。競合する場合は shortcut を外し、context menu のみで提供する
 
 ### Phase 7-3: Move Completed Lines Down
 
@@ -251,6 +278,7 @@ Gate:
 - `CheckableTextView.swift`
 - `ShortcutsWindowController.swift`
 - `EditorCommand.swift`
+- `EditorTextOperations.swift`
 
 実装内容:
 
@@ -280,6 +308,7 @@ Gate:
 - `CheckableTextView.swift`
 - `ShortcutsWindowController.swift`
 - `EditorCommand.swift`
+- `EditorTextOperations.swift`
 
 実装内容:
 
@@ -308,6 +337,7 @@ Gate:
 - `CheckableTextView.swift`
 - `ShortcutsWindowController.swift`
 - `EditorCommand.swift`
+- `EditorTextOperations.swift`
 
 実装内容:
 
@@ -335,6 +365,7 @@ Gate:
 - Home / Trash / Session の管理 UI と衝突しない
 - command list に追加済み shortcut が反映されている
 - command label / shortcut / context menu order の SSOT が `EditorCommand` に集約されている
+- command の text operation 本体が `EditorTextOperations` に集約されている
 
 ---
 
@@ -348,6 +379,7 @@ Gate:
 | Autosave | textStorage 直接変更が binding に戻らない | `didChangeText` を必ず呼ぶ |
 | Context menu | Copy / Paste 等の標準 menu を消す | 標準 menu に項目追加する方式を優先 |
 | Scope creep | editor command が増えすぎる | Phase ごとに 1 command family まで |
+| Wrapper bloat | `CheckableTextView` が text operation を抱え続ける | Phase 7-2 着手前に `EditorTextOperations` へ抽出し、以後の operation はそこに追加する |
 
 ---
 
@@ -389,6 +421,7 @@ Gate:
 [x] ファイルごとの責務を定義した  
 [x] persistence の保存経路を既存 autosave 一本に固定した  
 [x] keyboard / context menu のイベント経路を明記した
+[x] metadata は `EditorCommand`、text operation は `EditorTextOperations` へ分離する閾値を明記した
 
 ### Window / Focus
 
@@ -410,3 +443,4 @@ Gate:
 |---|---|
 | 2026-04-19 | 初版作成。`CheckableTextView` 導入後の editor command 拡張計画として、right click command surface / date insert / completed line organization / bullet toggle を phase 分割 |
 | 2026-04-19 | レビュー指摘対応。K-01 を表示 SSOT 問題に更新、`EditorCommand.swift` 抽出を Phase 7-1 必須化、date/time の timezone/locale/calendar、完了行移動の空行仕様、Clear Completed の確認 UX、bullet 対象外ルール、セルフチェックを明文化 |
+| 2026-04-19 | 二次レビュー指摘対応。`AppSettings` をスコープ外に固定、`EditorTextOperations.swift` 抽出閾値を追加、date/time shortcut を採用値として明記し競合時の fallback を定義 |
