@@ -5,14 +5,16 @@ struct MemoEditorView: View {
   @ObservedObject var uiState: MemoWindowUIState
   @EnvironmentObject private var appSettings: AppSettings
 
-  @FocusState private var isEditorFocused: Bool
+  @State private var isEditorFocused = false
 
   var body: some View {
-    TextEditor(text: $memo.draft)
-      .font(.system(size: appSettings.editorFontSize))
-      .focused($isEditorFocused)
-      .scrollContentBackground(.hidden)
-      .padding(14)
+    CheckableTextView(
+      text: $memo.draft,
+      focusToken: uiState.focusToken,
+      fontSize: appSettings.editorFontSize,
+      onFocusChange: { isEditorFocused = $0 }
+    )
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
       .background(
         RoundedRectangle(cornerRadius: 14, style: .continuous)
           .fill(memo.colorTheme.editorTintColor)
@@ -24,18 +26,6 @@ struct MemoEditorView: View {
               )
           )
       )
-      .onAppear {
-        focusEditor()
-      }
-      .onChange(of: uiState.focusToken) { _, _ in
-        focusEditor()
-      }
       .animation(.easeInOut(duration: 0.15), value: isEditorFocused)
-  }
-
-  private func focusEditor() {
-    DispatchQueue.main.async {
-      isEditorFocused = true
-    }
   }
 }

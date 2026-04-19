@@ -35,6 +35,7 @@
 		BA0000000000000000000130 /* CommandTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000131 /* CommandTheme.swift */; };
 		BA0000000000000000000132 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000133 /* Assets.xcassets */; };
 		BA0000000000000000000134 /* MemoColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000135 /* MemoColorTheme.swift */; };
+		BA0000000000000000000136 /* CheckableTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000137 /* CheckableTextView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,7 @@
 		BA0000000000000000000131 /* CommandTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandTheme.swift; sourceTree = "<group>"; };
 		BA0000000000000000000133 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BA0000000000000000000135 /* MemoColorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoColorTheme.swift; sourceTree = "<group>"; };
+		BA0000000000000000000137 /* CheckableTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckableTextView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -101,6 +103,7 @@
 				BA0000000000000000000008 /* HotkeyManager.swift */,
 				BA0000000000000000000010 /* MemoWindow.swift */,
 				BA0000000000000000000011 /* MemoEditorView.swift */,
+				BA0000000000000000000137 /* CheckableTextView.swift */,
 				BA0000000000000000000012 /* MemoWindowView.swift */,
 				BA0000000000000000000013 /* MemoWindowController.swift */,
 				BA0000000000000000000014 /* WindowManager.swift */,
@@ -227,6 +230,7 @@
 				BA0000000000000000000128 /* ShortcutsWindowController.swift in Sources */,
 				BA0000000000000000000130 /* CommandTheme.swift in Sources */,
 				BA0000000000000000000134 /* MemoColorTheme.swift in Sources */,
+				BA0000000000000000000136 /* CheckableTextView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
