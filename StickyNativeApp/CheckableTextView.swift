@@ -21,8 +21,8 @@ struct CheckableTextView: NSViewRepresentable {
     let textView = CheckboxNSTextView()
     textView.string = text
     textView.delegate = context.coordinator
-    textView.onToggleCheckbox = { [weak coordinator = context.coordinator] textView in
-      coordinator?.toggleCheckbox(in: textView)
+    textView.onPerformCommand = { [weak coordinator = context.coordinator] command, textView in
+      coordinator?.perform(command, in: textView)
     }
     textView.onFocusChange = onFocusChange
     configure(textView)
@@ -105,64 +105,21 @@ struct CheckableTextView: NSViewRepresentable {
       parent.onFocusChange(false)
     }
 
-    func toggleCheckbox(in textView: NSTextView) {
-      let original = textView.string as NSString
-      let selectedRange = textView.selectedRange()
-      let lineRange = checkboxLineRange(for: selectedRange, in: original)
-      let lineText = original.substring(with: lineRange)
-      let lines = lineText.components(separatedBy: "\n")
-      let replacement = lineText
-        .components(separatedBy: "\n")
-        .enumerated()
-        .map { index, line in
-          let isTrailingEmptyLine = index == lines.count - 1 && line.isEmpty && lineText.hasSuffix("\n")
-          return isTrailingEmptyLine ? line : toggledCheckboxLine(line)
-        }
-        .joined(separator: "\n")
-
-      guard replacement != lineText else { return }
-      guard textView.shouldChangeText(in: lineRange, replacementString: replacement) else { return }
-      textView.textStorage?.replaceCharacters(in: lineRange, with: replacement)
+    func perform(_ command: EditorCommand, in textView: NSTextView) {
+      guard !textView.hasMarkedText() else { return }
+      guard let edit = command.makeTextEdit(in: textView.string, selectedRange: textView.selectedRange()) else {
+        return
+      }
+      guard textView.shouldChangeText(in: edit.range, replacementString: edit.replacement) else { return }
+      textView.textStorage?.replaceCharacters(in: edit.range, with: edit.replacement)
       textView.didChangeText()
-      textView.setSelectedRange(NSRange(location: lineRange.location, length: (replacement as NSString).length))
-    }
-
-    private func checkboxLineRange(for selectedRange: NSRange, in text: NSString) -> NSRange {
-      guard text.length > 0 else {
-        return NSRange(location: 0, length: 0)
-      }
-
-      var range = selectedRange
-      if range.length > 0 && NSMaxRange(range) <= text.length {
-        range.length -= 1
-      }
-      return text.lineRange(for: range)
-    }
-
-    private func toggledCheckboxLine(_ line: String) -> String {
-      let indentation = line.prefix { $0 == " " || $0 == "\t" }
-      let body = line.dropFirst(indentation.count)
-      let prefix = String(indentation)
-
-      if body.hasPrefix("☐ ") {
-        return prefix + "☑ " + String(body.dropFirst(2))
-      }
-      if body.hasPrefix("☑ ") {
-        return prefix + String(body.dropFirst(2))
-      }
-      if body.hasPrefix("☐") {
-        return prefix + "☑" + String(body.dropFirst())
-      }
-      if body.hasPrefix("☑") {
-        return prefix + String(body.dropFirst())
-      }
-      return prefix + "☐ " + String(body)
+      textView.setSelectedRange(edit.selectedRange)
     }
   }
 }
 
 final class CheckboxNSTextView: NSTextView {
-  var onToggleCheckbox: ((NSTextView) -> Void)?
+  var onPerformCommand: ((EditorCommand, NSTextView) -> Void)?
   var onFocusChange: ((Bool) -> Void)?
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -225,10 +182,7 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   private func perform(_ command: EditorCommand) {
-    switch command {
-    case .toggleCheckbox:
-      onToggleCheckbox?(self)
-    }
+    onPerformCommand?(command, self)
   }
 
   private func toggleCheckboxIfNeeded(for event: NSEvent) -> Bool {
@@ -248,7 +202,7 @@ final class CheckboxNSTextView: NSTextView {
     let character = (string as NSString).substring(with: NSRange(location: index, length: 1))
     guard character == "☐" || character == "☑" else { return false }
     setSelectedRange((string as NSString).lineRange(for: NSRange(location: index, length: 0)))
-    onToggleCheckbox?(self)
+    onPerformCommand?(.toggleCheckbox, self)
     return true
   }
 }

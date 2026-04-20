@@ -2,15 +2,23 @@ import AppKit
 
 enum EditorCommand: String, CaseIterable {
   case toggleCheckbox
+  case insertDate
+  case insertDateTime
 
   static let contextMenuCommands: [EditorCommand] = [
     .toggleCheckbox,
+    .insertDate,
+    .insertDateTime,
   ]
 
   var label: String {
     switch self {
     case .toggleCheckbox:
       return "チェックボックス切り替え"
+    case .insertDate:
+      return "日付を挿入"
+    case .insertDateTime:
+      return "日時を挿入"
     }
   }
 
@@ -18,6 +26,10 @@ enum EditorCommand: String, CaseIterable {
     switch self {
     case .toggleCheckbox:
       return "Toggle Checkbox"
+    case .insertDate:
+      return "Insert Date"
+    case .insertDateTime:
+      return "Insert Date Time"
     }
   }
 
@@ -25,6 +37,10 @@ enum EditorCommand: String, CaseIterable {
     switch self {
     case .toggleCheckbox:
       return "⌘ + L"
+    case .insertDate:
+      return "⌘ + D"
+    case .insertDateTime:
+      return "⌘ + ⇧ + D"
     }
   }
 
@@ -32,6 +48,8 @@ enum EditorCommand: String, CaseIterable {
     switch self {
     case .toggleCheckbox:
       return "l"
+    case .insertDate, .insertDateTime:
+      return "d"
     }
   }
 
@@ -39,6 +57,10 @@ enum EditorCommand: String, CaseIterable {
     switch self {
     case .toggleCheckbox:
       return .command
+    case .insertDate:
+      return .command
+    case .insertDateTime:
+      return [.command, .shift]
     }
   }
 
@@ -48,5 +70,16 @@ enum EditorCommand: String, CaseIterable {
     }
     let relevantFlags = event.modifierFlags.intersection([.command, .option, .control, .shift])
     return relevantFlags == modifierFlags
+  }
+
+  func makeTextEdit(in text: String, selectedRange: NSRange, now: Date = Date()) -> EditorTextEdit? {
+    switch self {
+    case .toggleCheckbox:
+      return EditorTextOperations.toggleCheckbox(in: text, selectedRange: selectedRange)
+    case .insertDate:
+      return EditorTextOperations.insertDate(in: text, selectedRange: selectedRange, date: now)
+    case .insertDateTime:
+      return EditorTextOperations.insertDateTime(in: text, selectedRange: selectedRange, date: now)
+    }
   }
 }
