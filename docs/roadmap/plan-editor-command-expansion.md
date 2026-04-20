@@ -61,6 +61,7 @@
 
 - `StickyNativeApp/EditorCommand.swift`
   - editor command の enum / label / shortcut / context menu order を保持する
+  - `EditorCommandAdapter` 相当の薄い helper / static factory もこのファイル内に置く
 - `StickyNativeApp/EditorTextOperations.swift`
   - editor command の text operation を分離する
 
@@ -119,7 +120,7 @@
 - NSTextView lifecycle、focus、menu、keyboard event は持たない
 - SQLite / PersistenceCoordinator には触れない
 - Date / time operation は `Date` を引数で受け取り、内部で現在時刻を取得しない
-- `Date.now` の取得は `EditorCommandAdapter` 相当の薄い adapter で行い、`CheckableTextView` は現在時刻を取得しない
+- `Date.now` の取得は `EditorCommand.swift` 内の `EditorCommandAdapter` 相当の薄い helper / static factory で行い、`CheckableTextView` は現在時刻を取得しない
 - `EditorTextOperations` には adapter から渡された `Date` の formatting だけを置く
 
 `ShortcutsWindowController.swift`:
@@ -446,3 +447,4 @@ Gate:
 | 2026-04-19 | 初版作成。`CheckableTextView` 導入後の editor command 拡張計画として、right click command surface / date insert / completed line organization / bullet toggle を phase 分割 |
 | 2026-04-19 | レビュー指摘対応。K-01 を表示 SSOT 問題に更新、`EditorCommand.swift` 抽出を Phase 7-1 必須化、date/time の timezone/locale/calendar、完了行移動の空行仕様、Clear Completed の確認 UX、bullet 対象外ルール、セルフチェックを明文化 |
 | 2026-04-19 | 二次レビュー指摘対応。`AppSettings` をスコープ外に固定、`EditorTextOperations.swift` 抽出閾値を追加、date/time shortcut を採用値として明記し競合時の fallback を定義 |
+| 2026-04-20 | 三次レビュー指摘対応。`Date.now` 取得責務を `EditorCommand.swift` 内の薄い helper / static factory に固定し、`CheckableTextView` から現在時刻取得を除外 |
