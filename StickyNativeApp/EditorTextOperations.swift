@@ -29,11 +29,11 @@ enum EditorTextOperations {
   }
 
   static func insertDate(in text: String, selectedRange: NSRange, date: Date) -> EditorTextEdit? {
-    insert(formattedDate(date, format: "yyyy-MM-dd"), in: text, selectedRange: selectedRange)
+    insert(formattedDate(date, format: "yy/MM/dd"), in: text, selectedRange: selectedRange)
   }
 
   static func insertDateTime(in text: String, selectedRange: NSRange, date: Date) -> EditorTextEdit? {
-    insert(formattedDate(date, format: "yyyy-MM-dd HH:mm"), in: text, selectedRange: selectedRange)
+    insert(formattedDate(date, format: "yy/MM/dd HH:mm"), in: text, selectedRange: selectedRange)
   }
 
   private static func insert(_ replacement: String, in text: String, selectedRange: NSRange) -> EditorTextEdit? {

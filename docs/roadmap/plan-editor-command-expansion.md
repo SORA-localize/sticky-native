@@ -165,8 +165,8 @@ right click
 
 - checkbox: `☐` / `☑`
 - bullet list: `- `
-- date: `YYYY-MM-DD`
-- datetime: `YYYY-MM-DD HH:mm`
+- date: `YY/MM/DD`
+- datetime: `YY/MM/DD HH:mm`
 - completed task sort/delete: plain text 行単位変換
 
 DB schema は変更しない。
@@ -178,8 +178,8 @@ DB schema は変更しない。
 - `Locale(identifier: "en_US_POSIX")` を使い、数字・区切り文字を固定する
 - 24 時間表記に固定する
 - date format:
-  - date: `yyyy-MM-dd`
-  - datetime: `yyyy-MM-dd HH:mm`
+  - date: `yy/MM/dd`
+  - datetime: `yy/MM/dd HH:mm`
 
 ---
 
@@ -250,8 +250,8 @@ Gate:
 
 実装内容:
 
-- `Insert Date`: `YYYY-MM-DD`
-- `Insert Date Time`: `YYYY-MM-DD HH:mm`
+- `Insert Date`: `YY/MM/DD`
+- `Insert Date Time`: `YY/MM/DD HH:mm`
 - date / datetime は `Calendar(identifier: .gregorian)`, `TimeZone.current`, `Locale(identifier: "en_US_POSIX")` で生成する
 - 表記は 24 時間制に固定する
 - 採用 shortcut:
