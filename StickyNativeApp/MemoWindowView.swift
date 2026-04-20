@@ -32,6 +32,9 @@ struct MemoWindowView: View {
           Text(memo.title)
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(.primary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(maxWidth: 150, alignment: .leading)
         }
 
         WindowDragHandle()

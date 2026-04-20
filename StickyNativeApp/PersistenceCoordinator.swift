@@ -16,10 +16,7 @@ final class PersistenceCoordinator {
   }
 
   static func generateTitle(from draft: String) -> String {
-    let firstLine = draft
-      .components(separatedBy: "\n")
-      .first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? ""
-    return String(firstLine.trimmingCharacters(in: .whitespaces).prefix(50))
+    MemoTitleFormatter.generatedTitle(from: draft)
   }
 
   func saveWindowState(id: UUID, frame: NSRect?, isOpen: Bool) {
