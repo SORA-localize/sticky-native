@@ -23,14 +23,7 @@ enum EditorCommand: String, CaseIterable {
   }
 
   var menuTitle: String {
-    switch self {
-    case .toggleCheckbox:
-      return "Toggle Checkbox"
-    case .insertDate:
-      return "Insert Date"
-    case .insertDateTime:
-      return "Insert Date Time"
-    }
+    label
   }
 
   var shortcutDisplay: String {

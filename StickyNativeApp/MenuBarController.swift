@@ -5,11 +5,11 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
   private let menu = NSMenu()
 
-  private let newMemoItem    = NSMenuItem(title: "New Memo",            action: #selector(handleNewMemo),  keyEquivalent: "")
-  private let allMemosItem   = NSMenuItem(title: "All Memos",           action: #selector(handleOpenHome), keyEquivalent: "")
-  private let reopenItem     = NSMenuItem(title: "Reopen Last Closed",  action: #selector(handleReopen),   keyEquivalent: "")
-  private let shortcutsItem  = NSMenuItem(title: "Default Shortcut...", action: #selector(handleOpenShortcuts), keyEquivalent: "")
-  private let quitItem       = NSMenuItem(title: "Quit StickyNative",   action: #selector(handleQuit),     keyEquivalent: "")
+  private let newMemoItem    = NSMenuItem(title: "新規メモ", action: #selector(handleNewMemo),  keyEquivalent: "")
+  private let allMemosItem   = NSMenuItem(title: "すべてのメモ", action: #selector(handleOpenHome), keyEquivalent: "")
+  private let reopenItem     = NSMenuItem(title: "最後に閉じたメモを開く", action: #selector(handleReopen),   keyEquivalent: "")
+  private let shortcutsItem  = NSMenuItem(title: "キーボードショートカット...", action: #selector(handleOpenShortcuts), keyEquivalent: "")
+  private let quitItem       = NSMenuItem(title: "StickyNativeを終了", action: #selector(handleQuit),     keyEquivalent: "")
 
   // Font Size submenu
   private let fontSmallItem  = NSMenuItem(title: "小", action: #selector(setFontSmall),  keyEquivalent: "")
@@ -52,18 +52,18 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     // Font Size submenu
     let fontSizeMenu = NSMenu()
     fontSizeMenu.items = [fontSmallItem, fontMediumItem, fontLargeItem]
-    let fontSizeParent = NSMenuItem(title: "Font Size", action: nil, keyEquivalent: "")
+    let fontSizeParent = NSMenuItem(title: "文字サイズ", action: nil, keyEquivalent: "")
     fontSizeParent.submenu = fontSizeMenu
 
     // Memo Size submenu
     let memoSizeMenu = NSMenu()
     memoSizeMenu.items = [memoSmallItem, memoMediumItem, memoLargeItem]
-    let memoSizeParent = NSMenuItem(title: "Memo Size", action: nil, keyEquivalent: "")
+    let memoSizeParent = NSMenuItem(title: "メモサイズ", action: nil, keyEquivalent: "")
     memoSizeParent.submenu = memoSizeMenu
 
     let memoColorMenu = NSMenu()
     memoColorMenu.items = [memoColorDefaultItem, memoColorColorfulItem]
-    let memoColorParent = NSMenuItem(title: "Memo Color", action: nil, keyEquivalent: "")
+    let memoColorParent = NSMenuItem(title: "メモカラー", action: nil, keyEquivalent: "")
     memoColorParent.submenu = memoColorMenu
 
     // Hotkeys submenu（表示のみ）
@@ -71,18 +71,18 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     hotkeyItem.isEnabled = false
     let hotkeysMenu = NSMenu()
     hotkeysMenu.items = [hotkeyItem]
-    let hotkeysParent = NSMenuItem(title: "Hotkeys", action: nil, keyEquivalent: "")
+    let hotkeysParent = NSMenuItem(title: "ショートカット", action: nil, keyEquivalent: "")
     hotkeysParent.submenu = hotkeysMenu
 
     menu.autoenablesItems = false
     menu.delegate = self
     menu.items = [
-      sectionHeader("Memo"),
+      sectionHeader("メモ"),
       newMemoItem,
       allMemosItem,
       reopenItem,
       NSMenuItem.separator(),
-      sectionHeader("Settings"),
+      sectionHeader("設定"),
       fontSizeParent,
       memoSizeParent,
       memoColorParent,

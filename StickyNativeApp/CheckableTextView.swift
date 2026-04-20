@@ -151,10 +151,7 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   override func menu(for event: NSEvent) -> NSMenu? {
-    let menu = super.menu(for: event) ?? NSMenu()
-    if !menu.items.isEmpty {
-      menu.addItem(.separator())
-    }
+    let menu = NSMenu()
 
     for command in EditorCommand.contextMenuCommands {
       let item = NSMenuItem(title: command.menuTitle, action: #selector(performEditorCommand(_:)), keyEquivalent: "")
@@ -162,6 +159,13 @@ final class CheckboxNSTextView: NSTextView {
       item.representedObject = command.rawValue
       menu.addItem(item)
     }
+
+    menu.addItem(.separator())
+    menu.addItem(NSMenuItem(title: "切り取り", action: #selector(cut(_:)), keyEquivalent: ""))
+    menu.addItem(NSMenuItem(title: "コピー", action: #selector(copy(_:)), keyEquivalent: ""))
+    menu.addItem(NSMenuItem(title: "ペースト", action: #selector(paste(_:)), keyEquivalent: ""))
+    menu.addItem(.separator())
+    menu.addItem(NSMenuItem(title: "すべて選択", action: #selector(selectAll(_:)), keyEquivalent: ""))
 
     return menu
   }

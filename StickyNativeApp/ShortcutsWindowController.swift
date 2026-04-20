@@ -10,7 +10,7 @@ final class ShortcutsWindowController: NSWindowController {
       backing: .buffered,
       defer: false
     )
-    window.title = "Keyboard Shortcuts"
+    window.title = "キーボードショートカット"
     window.center()
 
     super.init(window: window)
