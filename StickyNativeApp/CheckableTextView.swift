@@ -186,12 +186,27 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   override func keyDown(with event: NSEvent) {
-    if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
-       event.charactersIgnoringModifiers?.lowercased() == "l" {
-      onToggleCheckbox?(self)
+    if let command = EditorCommand.allCases.first(where: { $0.matches(event) }) {
+      perform(command)
       return
     }
     super.keyDown(with: event)
+  }
+
+  override func menu(for event: NSEvent) -> NSMenu? {
+    let menu = super.menu(for: event) ?? NSMenu()
+    if !menu.items.isEmpty {
+      menu.addItem(.separator())
+    }
+
+    for command in EditorCommand.contextMenuCommands {
+      let item = NSMenuItem(title: command.menuTitle, action: #selector(performEditorCommand(_:)), keyEquivalent: "")
+      item.target = self
+      item.representedObject = command.rawValue
+      menu.addItem(item)
+    }
+
+    return menu
   }
 
   override func mouseDown(with event: NSEvent) {
@@ -199,6 +214,21 @@ final class CheckboxNSTextView: NSTextView {
       return
     }
     super.mouseDown(with: event)
+  }
+
+  @objc private func performEditorCommand(_ sender: NSMenuItem) {
+    guard
+      let rawValue = sender.representedObject as? String,
+      let command = EditorCommand(rawValue: rawValue)
+    else { return }
+    perform(command)
+  }
+
+  private func perform(_ command: EditorCommand) {
+    switch command {
+    case .toggleCheckbox:
+      onToggleCheckbox?(self)
+    }
   }
 
   private func toggleCheckboxIfNeeded(for event: NSEvent) -> Bool {

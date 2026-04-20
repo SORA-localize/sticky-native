@@ -43,7 +43,7 @@ private struct ShortcutsView: View {
           row(key: "⌘ + Enter", label: "保存して閉じる",    theme: .saveAndClose)
           row(key: "⌘ + W",     label: "閉じる",            theme: .close)
           row(key: "⌘ + ⌫",    label: "ゴミ箱に移す", theme: .trash)
-          row(key: "⌘ + L",     label: "チェックボックス切り替え")
+          row(command: .toggleCheckbox)
         }
 
         section("ヘッダボタン") {
@@ -86,6 +86,10 @@ private struct ShortcutsView: View {
         .background(Color(NSColor.controlBackgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 4))
     }
+  }
+
+  private func row(command: EditorCommand) -> some View {
+    row(key: command.shortcutDisplay, label: command.label)
   }
 
   private func row(icon: String, label: String, key: String? = nil) -> some View {
