@@ -168,6 +168,10 @@ private struct MemoRowView: View {
 
   @State private var isHovered = false
 
+  private var previewText: String {
+    MemoTitleFormatter.previewText(from: memo.draft)
+  }
+
   var body: some View {
     HStack(alignment: .center, spacing: 12) {
       VStack(alignment: .leading, spacing: 3) {
@@ -176,8 +180,8 @@ private struct MemoRowView: View {
           .foregroundStyle(memo.title.isEmpty ? .secondary : .primary)
           .lineLimit(1)
 
-        if !memo.draft.isEmpty {
-          Text(memo.draft)
+        if !previewText.isEmpty {
+          Text(previewText)
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
             .lineLimit(1)

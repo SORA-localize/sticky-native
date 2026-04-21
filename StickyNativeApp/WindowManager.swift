@@ -39,19 +39,14 @@ final class WindowManager {
     }
     closedMemoRecords.removeAll { $0.memoID == id }
     guard let persisted = coordinator.fetchMemo(id: id) else { return }
-    let origin: NSPoint? = persisted.originX.flatMap { x in
-      persisted.originY.map { y in NSPoint(x: x, y: y) }
-    }
-    let size: NSSize? = persisted.width.flatMap { w in
-      persisted.height.map { h in NSSize(width: w, height: h) }
-    }
+    let savedFrame = frame(from: persisted)
     coordinator.markOpen(id: id)
     let memo = MemoWindow(
       id: id,
       draft: persisted.draft,
       colorTheme: MemoColorTheme.from(index: persisted.colorIndex)
     )
-    let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
+    let controller = makeController(for: memo, savedFrame: savedFrame, initiallyPinned: persisted.isPinned)
     openControllers[id] = controller
     controller.showAndFocusEditor()
     if let frame = controller.currentFrame {
@@ -87,18 +82,13 @@ final class WindowManager {
         coordinator.permanentDelete(id: persisted.id)
         continue
       }
-      let origin: NSPoint? = persisted.originX.flatMap { x in
-        persisted.originY.map { y in NSPoint(x: x, y: y) }
-      }
-      let size: NSSize? = persisted.width.flatMap { w in
-        persisted.height.map { h in NSSize(width: w, height: h) }
-      }
+      let savedFrame = frame(from: persisted)
       let memo = MemoWindow(
         id: persisted.id,
         draft: persisted.draft,
         colorTheme: MemoColorTheme.from(index: persisted.colorIndex)
       )
-      let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: persisted.isPinned)
+      let controller = makeController(for: memo, savedFrame: savedFrame, initiallyPinned: persisted.isPinned)
       openControllers[memo.id] = controller
       controller.showAndFocusEditor()
       if let frame = controller.currentFrame {
@@ -123,7 +113,7 @@ final class WindowManager {
   func createNewMemoWindow() {
     let memo = MemoWindow(colorTheme: appSettings.makeNewMemoColorTheme())
     let size = NSSize(width: appSettings.defaultMemoWidth, height: appSettings.defaultMemoHeight)
-    let controller = makeController(for: memo, size: size)
+    let controller = makeController(for: memo, contentSize: size)
     openControllers[memo.id] = controller
     controller.showAndFocusEditor()
     lastCascadeOrigin = controller.currentFrame?.origin
@@ -136,14 +126,8 @@ final class WindowManager {
 
     let persisted = coordinator.fetchMemo(id: record.memoID)
     let draft = persisted?.draft ?? ""
-    let origin: NSPoint? = persisted.flatMap {
-      guard let x = $0.originX, let y = $0.originY else { return nil }
-      return NSPoint(x: x, y: y)
-    }
-    let size: NSSize? = persisted.flatMap {
-      guard let w = $0.width, let h = $0.height else { return nil }
-      return NSSize(width: w, height: h)
-    }
+    let savedFrame = record.frame ?? persisted.flatMap { frame(from: $0) }
+    let contentSize = savedFrame == nil ? Self.defaultContentSize(from: appSettings) : nil
     let isPinned = persisted?.isPinned ?? false
 
     coordinator.markOpen(id: record.memoID)
@@ -152,7 +136,7 @@ final class WindowManager {
       draft: draft,
       colorTheme: MemoColorTheme.from(index: persisted?.colorIndex ?? MemoColorTheme.fallback.colorIndex)
     )
-    let controller = makeController(for: memo, origin: origin, size: size, initiallyPinned: isPinned)
+    let controller = makeController(for: memo, contentSize: contentSize, savedFrame: savedFrame, initiallyPinned: isPinned)
     openControllers[memo.id] = controller
     controller.showAndFocusEditor()
     lastCascadeOrigin = controller.currentFrame?.origin
@@ -162,15 +146,17 @@ final class WindowManager {
   private func makeController(
     for memo: MemoWindow,
     origin: NSPoint? = nil,
-    size: NSSize? = nil,
+    contentSize: NSSize? = nil,
+    savedFrame: NSRect? = nil,
     initiallyPinned: Bool = false
   ) -> MemoWindowController {
-    let resolvedOrigin = origin ?? makeNextWindowOrigin()
+    let resolvedOrigin = savedFrame == nil ? (origin ?? makeNextWindowOrigin()) : nil
 
     return MemoWindowController(
       memo: memo,
       origin: resolvedOrigin,
-      size: size,
+      contentSize: contentSize,
+      savedFrame: savedFrame,
       initiallyPinned: initiallyPinned,
       appSettings: appSettings,
       onDraftChange: { [weak self] id, draft in
@@ -249,5 +235,22 @@ final class WindowManager {
       ?? coordinator.fetchMemo(id: id)?.colorIndex
       ?? MemoColorTheme.fallback.colorIndex
     coordinator.saveDraft(id: id, draft: draft, colorIndex: colorIndex)
+  }
+
+  private static func defaultContentSize(from appSettings: AppSettings) -> NSSize {
+    NSSize(width: appSettings.defaultMemoWidth, height: appSettings.defaultMemoHeight)
+  }
+
+  private func frame(from memo: PersistedMemo) -> NSRect? {
+    guard
+      let originX = memo.originX,
+      let originY = memo.originY,
+      let width = memo.width,
+      let height = memo.height
+    else {
+      return nil
+    }
+
+    return NSRect(x: originX, y: originY, width: width, height: height)
   }
 }

@@ -22,8 +22,9 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
   init(
     memo: MemoWindow,
-    origin: NSPoint?,
-    size: NSSize? = nil,
+    origin: NSPoint? = nil,
+    contentSize: NSSize? = nil,
+    savedFrame: NSRect? = nil,
     initiallyPinned: Bool = false,
     appSettings: AppSettings,
     onDraftChange: @escaping (UUID, String) -> Void,
@@ -43,11 +44,13 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     let window = SeamlessWindow(
       contentRect: NSRect(origin: .zero, size: Self.defaultContentSize),
-      styleMask: [.borderless, .resizable, .fullSizeContentView],
+      styleMask: [.titled, .resizable, .fullSizeContentView],
       backing: .buffered,
       defer: false
     )
     window.hidesOnDeactivate = false
+    window.titleVisibility = .hidden
+    window.titlebarAppearsTransparent = true
 
     super.init(window: window)
 
@@ -58,19 +61,23 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     window.contentView = hostingView
     window.delegate = self
-    window.isMovableByWindowBackground = true
+    window.isMovableByWindowBackground = false
     window.isOpaque = false
     window.backgroundColor = .clear
     window.hasShadow = true
-    window.minSize = Self.minimumContentSize
+    window.contentMinSize = Self.minimumContentSize
     window.setFrameAutosaveName("MemoWindow-\(memo.id.uuidString)")
+    hideStandardWindowButtons(in: window)
 
-    if let size {
-      window.setContentSize(size)
+    if let savedFrame {
+      window.setFrame(savedFrame, display: false)
+    } else if let contentSize {
+      window.setContentSize(contentSize)
     }
-    if let origin {
+
+    if savedFrame == nil, let origin {
       window.setFrameOrigin(origin)
-    } else {
+    } else if savedFrame == nil {
       window.center()
     }
 
@@ -173,5 +180,11 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
   private func requestEditorFocus() {
     uiState.requestEditorFocus()
+  }
+
+  private func hideStandardWindowButtons(in window: NSWindow) {
+    window.standardWindowButton(.closeButton)?.isHidden = true
+    window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+    window.standardWindowButton(.zoomButton)?.isHidden = true
   }
 }
