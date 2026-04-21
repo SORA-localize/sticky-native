@@ -34,6 +34,10 @@ final class PersistenceCoordinator {
     try? store.updatePinned(id: id, isPinned: isPinned)
   }
 
+  func saveListPinned(id: UUID, isPinned: Bool) {
+    try? store.updateListPinned(id: id, isPinned: isPinned)
+  }
+
   func markOpen(id: UUID) {
     try? store.markOpen(id: id)
   }

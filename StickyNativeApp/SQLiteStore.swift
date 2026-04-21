@@ -4,13 +4,13 @@ import SQLite3
 final class SQLiteStore {
   private var db: OpaquePointer?
 
-  // SELECT で使う標準列順（isSessionReady == true 時は末尾に 13:session_id が追加される）
+  // SELECT で使う標準列順（isSessionReady == true 時は末尾に 14:session_id が追加される）
   // 0:id 1:draft 2:title 3:origin_x 4:origin_y 5:width 6:height 7:color_index
-  // 8:is_pinned 9:is_open 10:is_trashed 11:created_at 12:updated_at [13:session_id]
+  // 8:is_pinned 9:is_list_pinned 10:is_open 11:is_trashed 12:created_at 13:updated_at [14:session_id]
   private var selectColumns: String {
     let base = """
       id, draft, title, origin_x, origin_y, width, height, color_index,
-      is_pinned, is_open, is_trashed, created_at, updated_at
+      is_pinned, is_list_pinned, is_open, is_trashed, created_at, updated_at
       """
     return isSessionReady ? base + ", session_id" : base
   }
@@ -48,6 +48,7 @@ final class SQLiteStore {
         height     REAL,
         color_index INTEGER NOT NULL DEFAULT 0,
         is_pinned  INTEGER NOT NULL DEFAULT 0,
+        is_list_pinned INTEGER NOT NULL DEFAULT 0,
         is_open    INTEGER NOT NULL DEFAULT 1,
         is_trashed INTEGER NOT NULL DEFAULT 0,
         created_at REAL,
@@ -79,6 +80,9 @@ final class SQLiteStore {
     }
     if !existing.contains("color_index") {
       try exec("ALTER TABLE memos ADD COLUMN color_index INTEGER NOT NULL DEFAULT 0;")
+    }
+    if !existing.contains("is_list_pinned") {
+      try exec("ALTER TABLE memos ADD COLUMN is_list_pinned INTEGER NOT NULL DEFAULT 0;")
     }
 
     // session_id migration: 失敗しても起動継続（degraded 起動）
@@ -177,6 +181,17 @@ final class SQLiteStore {
     sqlite3_bind_int(stmt, 1, isPinned ? 1 : 0)
     sqlite3_bind_double(stmt, 2, Date.now.timeIntervalSince1970)
     sqlite3_bind_text(stmt, 3, id.uuidString, -1, SQLITE_TRANSIENT)
+    try step(stmt)
+  }
+
+  func updateListPinned(id: UUID, isPinned: Bool) throws {
+    let sql = "UPDATE memos SET is_list_pinned = ? WHERE id = ?;"
+    var stmt: OpaquePointer?
+    defer { sqlite3_finalize(stmt) }
+
+    try prepare(sql, &stmt)
+    sqlite3_bind_int(stmt, 1, isPinned ? 1 : 0)
+    sqlite3_bind_text(stmt, 2, id.uuidString, -1, SQLITE_TRANSIENT)
     try step(stmt)
   }
 
@@ -400,11 +415,11 @@ final class SQLiteStore {
     let width    = sqlite3_column_type(stmt, 5) != SQLITE_NULL ? sqlite3_column_double(stmt, 5) : nil as Double?
     let height   = sqlite3_column_type(stmt, 6) != SQLITE_NULL ? sqlite3_column_double(stmt, 6) : nil as Double?
     let colorIndex = Int(sqlite3_column_int(stmt, 7))
-    let createdAt = sqlite3_column_type(stmt, 11) != SQLITE_NULL
-      ? Date(timeIntervalSince1970: sqlite3_column_double(stmt, 11))
+    let createdAt = sqlite3_column_type(stmt, 12) != SQLITE_NULL
+      ? Date(timeIntervalSince1970: sqlite3_column_double(stmt, 12))
       : nil as Date?
     let sessionID: UUID? = isSessionReady
-      ? sqlite3_column_text(stmt, 13).flatMap { UUID(uuidString: String(cString: $0)) }
+      ? sqlite3_column_text(stmt, 14).flatMap { UUID(uuidString: String(cString: $0)) }
       : nil
 
     return PersistedMemo(
@@ -417,10 +432,11 @@ final class SQLiteStore {
       height: height,
       colorIndex: MemoColorTheme.from(index: colorIndex).colorIndex,
       isPinned: sqlite3_column_int(stmt, 8) != 0,
-      isOpen: sqlite3_column_int(stmt, 9) != 0,
-      isTrash: sqlite3_column_int(stmt, 10) != 0,
+      isListPinned: sqlite3_column_int(stmt, 9) != 0,
+      isOpen: sqlite3_column_int(stmt, 10) != 0,
+      isTrash: sqlite3_column_int(stmt, 11) != 0,
       createdAt: createdAt,
-      updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 12)),
+      updatedAt: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 13)),
       sessionID: sessionID
     )
   }

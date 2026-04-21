@@ -11,25 +11,13 @@ struct HomeView: View {
   let onDeleteSession: (UUID) -> Void
   let onAssignSession: (UUID, UUID?) -> Void
 
-  @State private var searchQuery = ""
-  @State private var showTrash = false
   @State private var isSessionManagerPresented = false
 
-  private var displayedMemos: [PersistedMemo] {
-    let list = showTrash ? viewModel.trashedMemos : viewModel.filteredMemos
-    guard !searchQuery.isEmpty else { return list }
-    return list.filter {
-      $0.title.localizedCaseInsensitiveContains(searchQuery) ||
-      $0.draft.localizedCaseInsensitiveContains(searchQuery)
-    }
-  }
-
   var body: some View {
-    VStack(spacing: 0) {
-      toolbar
-      searchBar
+    HStack(spacing: 0) {
+      sidebar
       Divider()
-      memoList
+      mainContent
     }
     .onAppear { viewModel.reload() }
     .sheet(isPresented: $isSessionManagerPresented) {
@@ -42,115 +30,182 @@ struct HomeView: View {
     }
   }
 
-  // MARK: - Subviews
+  // MARK: - Sidebar
 
-  private var toolbar: some View {
-    HStack(spacing: 8) {
-      Picker("", selection: $showTrash) {
-        Text("Memos").tag(false)
-        Text("Trash").tag(true)
-      }
-      .pickerStyle(.segmented)
-      .frame(width: 160)
-      .onChange(of: showTrash) { _ in
-        if showTrash {
-          viewModel.selectedFilter = .all
+  private var sidebar: some View {
+    VStack(spacing: 0) {
+      ScrollView {
+        VStack(alignment: .leading, spacing: 10) {
+          VStack(alignment: .leading, spacing: 3) {
+            sidebarRow(.all)
+            sidebarRow(.pinned)
+            sidebarRow(.today)
+            sidebarRow(.last7Days)
+            sidebarRow(.unsorted)
+            sidebarRow(.trash)
+          }
+
+          if viewModel.isSessionReady {
+            VStack(alignment: .leading, spacing: 3) {
+              Text("Sessions")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 9)
+                .padding(.top, 3)
+
+              ForEach(viewModel.sessions, id: \.id) { session in
+                sidebarRow(.session(session.id), title: session.name, icon: "folder")
+              }
+            }
+          }
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 12)
       }
 
       if viewModel.isSessionReady {
-        sessionFilterPicker
-          .disabled(showTrash)
-
+        Divider()
         Button {
           isSessionManagerPresented = true
         } label: {
-          Image(systemName: "ellipsis.circle")
-            .font(.system(size: 13))
+          Label("Sessions", systemImage: "ellipsis.circle")
+            .font(.system(size: 12))
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(showTrash ? .tertiary : .secondary)
-        .disabled(showTrash)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+      }
+    }
+    .frame(width: 188)
+    .background(Color(NSColor.controlBackgroundColor))
+  }
+
+  private func sidebarRow(_ scope: HomeScope, title: String? = nil, icon: String? = nil) -> some View {
+    let selected = viewModel.selectedScope == scope
+    return Button {
+      viewModel.selectedScope = scope
+    } label: {
+      HStack(spacing: 8) {
+        Image(systemName: icon ?? scope.iconName)
+          .font(.system(size: 12))
+          .frame(width: 16)
+        Text(title ?? scope.title)
+          .font(.system(size: 12))
+          .lineLimit(1)
+        Spacer(minLength: 0)
+      }
+      .padding(.horizontal, 8)
+      .padding(.vertical, 5)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(selected ? Color.accentColor.opacity(0.18) : Color.clear)
+      .clipShape(RoundedRectangle(cornerRadius: 6))
+      .foregroundStyle(selected ? .primary : .secondary)
+    }
+    .buttonStyle(.plain)
+  }
+
+  // MARK: - Main
+
+  private var mainContent: some View {
+    VStack(spacing: 0) {
+      header
+      searchBar
+      Divider()
+      memoList
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+  }
+
+  private var header: some View {
+    HStack(spacing: 12) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(scopeTitle)
+          .font(.system(size: 16, weight: .semibold))
+          .lineLimit(1)
+        Text("\(memoCount) \(memoCount == 1 ? "memo" : "memos")")
+          .font(.system(size: 11))
+          .foregroundStyle(.secondary)
       }
 
       Spacer()
 
-      if showTrash && !viewModel.trashedMemos.isEmpty {
+      if viewModel.selectedScope == .trash && !viewModel.trashedMemos.isEmpty {
         Button("Empty Trash") { onEmptyTrash() }
           .foregroundStyle(.red)
           .buttonStyle(.plain)
           .font(.system(size: 12))
       }
     }
-    .padding(.horizontal, 16)
-    .padding(.vertical, 12)
-  }
-
-  private var sessionFilterPicker: some View {
-    Picker("", selection: $viewModel.selectedFilter) {
-      Text("All").tag(SessionFilter.all)
-      Text("Unsorted").tag(SessionFilter.unsorted)
-      if !viewModel.sessions.isEmpty {
-        Divider()
-        ForEach(viewModel.sessions, id: \.id) { session in
-          Text(session.name).tag(SessionFilter.session(session.id))
-        }
-      }
-    }
-    .pickerStyle(.menu)
-    .frame(maxWidth: 120)
+    .padding(.horizontal, 18)
+    .padding(.top, 14)
+    .padding(.bottom, 8)
   }
 
   private var searchBar: some View {
-    HStack(spacing: 6) {
+    HStack(spacing: 7) {
       Image(systemName: "magnifyingglass")
         .foregroundStyle(.secondary)
         .font(.system(size: 12))
-      TextField("Search", text: $searchQuery)
+      TextField("Search", text: $viewModel.searchQuery)
         .textFieldStyle(.plain)
         .font(.system(size: 13))
     }
-    .padding(.horizontal, 12)
-    .padding(.vertical, 8)
+    .padding(.horizontal, 11)
+    .padding(.vertical, 7)
     .background(Color(NSColor.controlBackgroundColor))
+    .clipShape(RoundedRectangle(cornerRadius: 7))
+    .padding(.horizontal, 18)
+    .padding(.bottom, 10)
   }
 
   @ViewBuilder
   private var memoList: some View {
-    if displayedMemos.isEmpty {
+    if viewModel.sections.isEmpty {
       VStack {
         Spacer()
-        Text(emptyMessage)
+        Text(viewModel.emptyMessage)
           .foregroundStyle(.secondary)
           .font(.system(size: 13))
         Spacer()
       }
     } else {
-      List(displayedMemos, id: \.id) { memo in
-        MemoRowView(
-          memo: memo,
-          isTrashView: showTrash,
-          sessions: viewModel.sessions,
-          isSessionReady: viewModel.isSessionReady,
-          onOpen: { onOpenMemo(memo.id) },
-          onTrash: { onTrashMemo(memo.id) },
-          onRestore: { onRestoreMemo(memo.id) },
-          onAssignSession: { sessionID in onAssignSession(memo.id, sessionID) }
-        )
-        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+      List {
+        ForEach(viewModel.sections) { section in
+          Section(section.title) {
+            ForEach(section.memos, id: \.id) { memo in
+              MemoRowView(
+                memo: memo,
+                isTrashView: viewModel.selectedScope == .trash,
+                sessions: viewModel.sessions,
+                sessionName: viewModel.sessionName(for: memo),
+                isSessionReady: viewModel.isSessionReady,
+                onOpen: { onOpenMemo(memo.id) },
+                onTrash: { onTrashMemo(memo.id) },
+                onRestore: { onRestoreMemo(memo.id) },
+                onSetListPinned: { isPinned in viewModel.setListPinned(id: memo.id, isPinned: isPinned) },
+                onAssignSession: { sessionID in onAssignSession(memo.id, sessionID) }
+              )
+              .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 14))
+            }
+          }
+        }
       }
       .listStyle(.plain)
     }
   }
 
-  private var emptyMessage: String {
-    if !searchQuery.isEmpty { return "No results" }
-    if showTrash { return "Trash is empty" }
-    switch viewModel.selectedFilter {
-    case .unsorted: return "No unsorted memos"
-    case .session: return "No memos in this session"
-    case .all: return "No memos"
+  private var scopeTitle: String {
+    if case .session(let id) = viewModel.selectedScope,
+       let session = viewModel.sessions.first(where: { $0.id == id }) {
+      return session.name
     }
+    return viewModel.selectedScope.title
+  }
+
+  private var memoCount: Int {
+    viewModel.sections.reduce(0) { $0 + $1.memos.count }
   }
 }
 
@@ -160,10 +215,12 @@ private struct MemoRowView: View {
   let memo: PersistedMemo
   let isTrashView: Bool
   let sessions: [Session]
+  let sessionName: String?
   let isSessionReady: Bool
   let onOpen: () -> Void
   let onTrash: () -> Void
   let onRestore: () -> Void
+  let onSetListPinned: (Bool) -> Void
   let onAssignSession: (UUID?) -> Void
 
   @State private var isHovered = false
@@ -173,12 +230,20 @@ private struct MemoRowView: View {
   }
 
   var body: some View {
-    HStack(alignment: .center, spacing: 12) {
-      VStack(alignment: .leading, spacing: 3) {
-        Text(memo.title.isEmpty ? "Untitled" : memo.title)
-          .font(.system(size: 13, weight: .medium))
-          .foregroundStyle(memo.title.isEmpty ? .secondary : .primary)
-          .lineLimit(1)
+    HStack(alignment: .center, spacing: 10) {
+      VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 6) {
+          Text(memo.title.isEmpty ? "Untitled" : memo.title)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(memo.title.isEmpty ? .secondary : .primary)
+            .lineLimit(1)
+
+          if memo.isListPinned && !isTrashView {
+            Image(systemName: "pin.fill")
+              .font(.system(size: 10))
+              .foregroundStyle(.secondary)
+          }
+        }
 
         if !previewText.isEmpty {
           Text(previewText)
@@ -186,14 +251,22 @@ private struct MemoRowView: View {
             .foregroundStyle(.secondary)
             .lineLimit(1)
         }
+
+        if let sessionName {
+          Text(sessionName)
+            .font(.system(size: 10))
+            .foregroundStyle(.tertiary)
+            .lineLimit(1)
+        }
       }
 
-      Spacer()
+      Spacer(minLength: 8)
 
-      VStack(alignment: .trailing, spacing: 6) {
+      VStack(alignment: .trailing, spacing: 7) {
         Text(memo.updatedAt, style: .relative)
           .font(.system(size: 10))
           .foregroundStyle(.tertiary)
+          .lineLimit(1)
 
         if isTrashView {
           Button("Restore") { onRestore() }
@@ -201,23 +274,47 @@ private struct MemoRowView: View {
             .buttonStyle(.plain)
             .foregroundStyle(.blue)
         } else {
-          Button(action: onTrash) {
-            Image(systemName: "trash")
-              .font(.system(size: 11))
+          HStack(spacing: 9) {
+            Button {
+              onSetListPinned(!memo.isListPinned)
+            } label: {
+              Image(systemName: memo.isListPinned ? "pin.fill" : "pin")
+                .font(.system(size: 11))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .opacity(isHovered || memo.isListPinned ? 1 : 0)
+
+            Button(action: onTrash) {
+              Image(systemName: "trash")
+                .font(.system(size: 11))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .opacity(isHovered ? 1 : 0)
           }
-          .buttonStyle(.plain)
-          .foregroundStyle(.secondary)
-          .opacity(isHovered ? 1 : 0)
         }
       }
-      .frame(minWidth: 60, alignment: .trailing)
+      .frame(minWidth: 76, alignment: .trailing)
     }
     .contentShape(Rectangle())
     .onTapGesture { if !isTrashView { onOpen() } }
     .onHover { isHovered = $0 }
     .contextMenu {
-      if !isTrashView && isSessionReady {
-        sessionAssignMenu
+      if isTrashView {
+        Button("Restore") { onRestore() }
+      } else {
+        Button(memo.isListPinned ? "Unpin from List" : "Pin in List") {
+          onSetListPinned(!memo.isListPinned)
+        }
+
+        if isSessionReady {
+          Divider()
+          sessionAssignMenu
+        }
+
+        Divider()
+        Button("Move to Trash") { onTrash() }
       }
     }
   }
@@ -232,6 +329,48 @@ private struct MemoRowView: View {
           Button(session.name) { onAssignSession(session.id) }
         }
       }
+    }
+  }
+}
+
+// MARK: - Sidebar Metadata
+
+private extension HomeScope {
+  var title: String {
+    switch self {
+    case .all:
+      return "All Memos"
+    case .pinned:
+      return "Pinned"
+    case .today:
+      return "Today"
+    case .last7Days:
+      return "Last 7 Days"
+    case .unsorted:
+      return "Unsorted"
+    case .trash:
+      return "Trash"
+    case .session:
+      return "Session"
+    }
+  }
+
+  var iconName: String {
+    switch self {
+    case .all:
+      return "tray.full"
+    case .pinned:
+      return "pin"
+    case .today:
+      return "sun.max"
+    case .last7Days:
+      return "calendar"
+    case .unsorted:
+      return "tray"
+    case .trash:
+      return "trash"
+    case .session:
+      return "folder"
     }
   }
 }
@@ -289,11 +428,9 @@ private struct SessionManagerView: View {
             .buttonStyle(.plain)
           }
           .padding(.vertical, 2)
-          // フォーカスが外れたときに rename 確定
           .onDisappear { commitRename(for: session) }
         }
 
-        // 新規セッション追加行
         HStack {
           Image(systemName: "plus")
             .font(.system(size: 11))
@@ -314,7 +451,6 @@ private struct SessionManagerView: View {
     guard let edited = editingNames[session.id] else { return }
     let trimmed = edited.trimmingCharacters(in: .whitespacesAndNewlines)
     if trimmed.isEmpty {
-      // 空文字は破棄して元の名前に戻す
       editingNames[session.id] = session.name
     } else if trimmed != session.name {
       onRename(session.id, trimmed)
@@ -328,3 +464,4 @@ private struct SessionManagerView: View {
     newSessionName = ""
   }
 }
+

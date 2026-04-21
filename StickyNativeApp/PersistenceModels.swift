@@ -10,6 +10,7 @@ struct PersistedMemo {
   let height: Double?
   let colorIndex: Int
   let isPinned: Bool
+  let isListPinned: Bool
   let isOpen: Bool
   let isTrash: Bool
   let createdAt: Date?

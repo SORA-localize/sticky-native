@@ -16,13 +16,13 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
     self.viewModel = HomeViewModel(coordinator: coordinator)
 
     let window = NSWindow(
-      contentRect: NSRect(x: 0, y: 0, width: 480, height: 580),
+      contentRect: NSRect(x: 0, y: 0, width: 720, height: 580),
       styleMask: [.titled, .closable, .resizable, .miniaturizable],
       backing: .buffered,
       defer: false
     )
     window.title = "All Memos"
-    window.minSize = NSSize(width: 360, height: 400)
+    window.minSize = NSSize(width: 560, height: 420)
     window.center()
 
     super.init(window: window)
@@ -48,6 +48,7 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func show() {
+    viewModel.clearSearch()
     viewModel.reload()
     NSApp.activate(ignoringOtherApps: true)
     showWindow(nil)
@@ -89,10 +90,7 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
   }
 
   private func handleDeleteSession(id: UUID) {
-    // 削除されたセッションを選択中なら All に戻す
-    if viewModel.selectedFilter == .session(id) {
-      viewModel.selectedFilter = .all
-    }
+    viewModel.deleteSessionFallbackIfNeeded(id: id)
     coordinator.deleteSession(id: id)
     viewModel.reload()
   }
