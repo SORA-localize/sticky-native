@@ -249,13 +249,13 @@ final class SQLiteStore {
     try step(stmt)
   }
 
-  func updateMemoSession(id: UUID, sessionID: UUID?) throws {
+  func updateMemoFolder(id: UUID, folderID: UUID?) throws {
     let sql = "UPDATE memos SET session_id = ?, updated_at = ? WHERE id = ?;"
     var stmt: OpaquePointer?
     defer { sqlite3_finalize(stmt) }
     try prepare(sql, &stmt)
-    if let sessionID {
-      sqlite3_bind_text(stmt, 1, sessionID.uuidString, -1, SQLITE_TRANSIENT)
+    if let folderID {
+      sqlite3_bind_text(stmt, 1, folderID.uuidString, -1, SQLITE_TRANSIENT)
     } else {
       sqlite3_bind_null(stmt, 1)
     }
@@ -292,7 +292,7 @@ final class SQLiteStore {
 
   // MARK: - Session CRUD
 
-  func insertSession(id: UUID, name: String) throws {
+  func insertFolder(id: UUID, name: String) throws {
     let now = Date.now.timeIntervalSince1970
     let sql = """
       INSERT INTO sessions (id, name, created_at, updated_at)
@@ -308,7 +308,7 @@ final class SQLiteStore {
     try step(stmt)
   }
 
-  func updateSession(id: UUID, name: String) throws {
+  func updateFolder(id: UUID, name: String) throws {
     let sql = "UPDATE sessions SET name = ?, updated_at = ? WHERE id = ?;"
     var stmt: OpaquePointer?
     defer { sqlite3_finalize(stmt) }
@@ -319,12 +319,12 @@ final class SQLiteStore {
     try step(stmt)
   }
 
-  func deleteSession(id: UUID) throws {
-    // 2 ステップをトランザクションで実行: memo を Unsorted に戻す → session 行削除
+  func deleteFolder(id: UUID) throws {
+    // 2 ステップをトランザクションで実行: memo を Unsorted に戻す → folder 行削除
     try exec("BEGIN;")
     do {
-      try clearSessionFromMemos(sessionID: id)
-      try deleteSessionRow(id: id)
+      try clearFolderFromMemos(folderID: id)
+      try deleteFolderRow(id: id)
       try exec("COMMIT;")
     } catch {
       try? exec("ROLLBACK;")
@@ -332,30 +332,30 @@ final class SQLiteStore {
     }
   }
 
-  func fetchAllSessions() throws -> [Session] {
+  func fetchAllFolders() throws -> [Folder] {
     let sql = "SELECT id, name, created_at, updated_at FROM sessions ORDER BY created_at ASC;"
     var stmt: OpaquePointer?
     defer { sqlite3_finalize(stmt) }
     try prepare(sql, &stmt)
-    var results: [Session] = []
+    var results: [Folder] = []
     while sqlite3_step(stmt) == SQLITE_ROW {
-      if let session = sessionRow(from: stmt) {
-        results.append(session)
+      if let folder = folderRow(from: stmt) {
+        results.append(folder)
       }
     }
     return results
   }
 
-  private func clearSessionFromMemos(sessionID: UUID) throws {
+  private func clearFolderFromMemos(folderID: UUID) throws {
     let sql = "UPDATE memos SET session_id = NULL WHERE session_id = ?;"
     var stmt: OpaquePointer?
     defer { sqlite3_finalize(stmt) }
     try prepare(sql, &stmt)
-    sqlite3_bind_text(stmt, 1, sessionID.uuidString, -1, SQLITE_TRANSIENT)
+    sqlite3_bind_text(stmt, 1, folderID.uuidString, -1, SQLITE_TRANSIENT)
     try step(stmt)
   }
 
-  private func deleteSessionRow(id: UUID) throws {
+  private func deleteFolderRow(id: UUID) throws {
     let sql = "DELETE FROM sessions WHERE id = ?;"
     var stmt: OpaquePointer?
     defer { sqlite3_finalize(stmt) }
@@ -453,7 +453,7 @@ final class SQLiteStore {
     )
   }
 
-  private func sessionRow(from stmt: OpaquePointer?) -> Session? {
+  private func folderRow(from stmt: OpaquePointer?) -> Folder? {
     guard
       let rawID = sqlite3_column_text(stmt, 0).map({ String(cString: $0) }),
       let id = UUID(uuidString: rawID),
@@ -461,7 +461,7 @@ final class SQLiteStore {
     else { return nil }
     let createdAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 2))
     let updatedAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 3))
-    return Session(id: id, name: name, createdAt: createdAt, updatedAt: updatedAt)
+    return Folder(id: id, name: name, createdAt: createdAt, updatedAt: updatedAt)
   }
 
   private static func storeURL() throws -> URL {

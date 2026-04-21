@@ -19,7 +19,7 @@ struct PersistedMemo {
   let sessionID: UUID?
 }
 
-struct Session {
+struct Folder {
   let id: UUID
   let name: String
   let createdAt: Date

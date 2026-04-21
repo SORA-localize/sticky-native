@@ -34,10 +34,10 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
       onTrashMemo: { [weak self] id in self?.handleTrashMemo(id: id) },
       onRestoreMemo: { [weak self] id in self?.handleRestoreMemo(id: id) },
       onEmptyTrash: { [weak self] in self?.handleEmptyTrash() },
-      onCreateSession: { [weak self] name in self?.handleCreateSession(name: name) },
-      onRenameSession: { [weak self] id, name in self?.handleRenameSession(id: id, name: name) },
-      onDeleteSession: { [weak self] id in self?.handleDeleteSession(id: id) },
-      onAssignSession: { [weak self] memoID, sessionID in self?.handleAssignSession(memoID: memoID, sessionID: sessionID) }
+      onCreateFolder: { [weak self] name in self?.handleCreateFolder(name: name) },
+      onRenameFolder: { [weak self] id, name in self?.handleRenameFolder(id: id, name: name) },
+      onDeleteFolder: { [weak self] id in self?.handleDeleteFolder(id: id) },
+      onAssignFolder: { [weak self] memoID, folderID in self?.handleAssignFolder(memoID: memoID, folderID: folderID) }
     )
     window.contentView = NSHostingView(rootView: rootView)
   }
@@ -77,26 +77,26 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
     viewModel.reload()
   }
 
-  // MARK: - Session Handlers
+  // MARK: - Folder Handlers
 
-  private func handleCreateSession(name: String) {
-    coordinator.createSession(name: name)
+  private func handleCreateFolder(name: String) {
+    coordinator.createFolder(name: name)
     viewModel.reload()
   }
 
-  private func handleRenameSession(id: UUID, name: String) {
-    coordinator.renameSession(id: id, name: name)
+  private func handleRenameFolder(id: UUID, name: String) {
+    coordinator.renameFolder(id: id, name: name)
     viewModel.reload()
   }
 
-  private func handleDeleteSession(id: UUID) {
-    viewModel.deleteSessionFallbackIfNeeded(id: id)
-    coordinator.deleteSession(id: id)
+  private func handleDeleteFolder(id: UUID) {
+    viewModel.deleteFolderFallbackIfNeeded(id: id)
+    coordinator.deleteFolder(id: id)
     viewModel.reload()
   }
 
-  private func handleAssignSession(memoID: UUID, sessionID: UUID?) {
-    coordinator.assignSession(memoID: memoID, sessionID: sessionID)
+  private func handleAssignFolder(memoID: UUID, folderID: UUID?) {
+    coordinator.assignFolder(memoID: memoID, folderID: folderID)
     viewModel.reload()
   }
 }

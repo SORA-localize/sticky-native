@@ -2,12 +2,8 @@ import Foundation
 
 enum HomeScope: Equatable, Hashable {
   case all
-  case pinned
-  case today
-  case last7Days
-  case unsorted
   case trash
-  case session(UUID)
+  case folder(UUID)
 }
 
 struct MemoListSection: Identifiable {
@@ -20,25 +16,25 @@ struct MemoListSection: Identifiable {
 final class HomeViewModel: ObservableObject {
   @Published var memos: [PersistedMemo] = []
   @Published var trashedMemos: [PersistedMemo] = []
-  @Published var sessions: [Session] = []
+  @Published var folders: [Folder] = []
   @Published var selectedScope: HomeScope = .all
   @Published var searchQuery = ""
 
-  let isSessionReady: Bool
+  let isFolderReady: Bool
   private let coordinator: PersistenceCoordinator
   private let calendar: Calendar
 
   init(coordinator: PersistenceCoordinator, calendar: Calendar = .current) {
     self.coordinator = coordinator
     self.calendar = calendar
-    self.isSessionReady = coordinator.isSessionReady
+    self.isFolderReady = coordinator.isFolderReady
   }
 
   func reload() {
     memos = coordinator.fetchAllMemos()
     trashedMemos = coordinator.fetchTrashedMemos()
-    if isSessionReady {
-      sessions = coordinator.fetchAllSessions()
+    if isFolderReady {
+      folders = coordinator.fetchAllFolders()
     }
   }
 
@@ -51,11 +47,27 @@ final class HomeViewModel: ObservableObject {
     reload()
   }
 
-  func deleteSessionFallbackIfNeeded(id: UUID) {
-    if selectedScope == .session(id) {
+  func deleteFolderFallbackIfNeeded(id: UUID) {
+    if selectedScope == .folder(id) {
       selectedScope = .all
     }
   }
+
+  // MARK: - Counts
+
+  var allMemosCount: Int {
+    memos.filter { $0.sessionID == nil }.count
+  }
+
+  func folderCount(id: UUID) -> Int {
+    memos.filter { $0.sessionID == id }.count
+  }
+
+  var trashCount: Int {
+    trashedMemos.count
+  }
+
+  // MARK: - Sections
 
   var sections: [MemoListSection] {
     let scoped = sortedMemos(scopeMemos)
@@ -69,7 +81,7 @@ final class HomeViewModel: ObservableObject {
       return results.isEmpty ? [] : [MemoListSection(id: "search", title: "Search Results", memos: results)]
     }
 
-    if selectedScope == .trash || selectedScope == .pinned {
+    if selectedScope == .trash {
       return dateSections(for: scoped)
     }
 
@@ -87,45 +99,23 @@ final class HomeViewModel: ObservableObject {
     if !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       return "No results"
     }
-
     switch selectedScope {
     case .all:
       return "No memos"
-    case .pinned:
-      return "No pinned memos"
-    case .today:
-      return "No memos today"
-    case .last7Days:
-      return "No memos in the last 7 days"
-    case .unsorted:
-      return "No unsorted memos"
     case .trash:
       return "Trash is empty"
-    case .session:
-      return "No memos in this session"
+    case .folder:
+      return "No memos in this folder"
     }
-  }
-
-  func sessionName(for memo: PersistedMemo) -> String? {
-    guard let sessionID = memo.sessionID else { return nil }
-    return sessions.first { $0.id == sessionID }?.name
   }
 
   private var scopeMemos: [PersistedMemo] {
     switch selectedScope {
     case .all:
-      return memos
-    case .pinned:
-      return memos.filter(\.isListPinned)
-    case .today:
-      return memos.filter { calendar.isDateInToday($0.contentEditedAt) }
-    case .last7Days:
-      return memos.filter { isInLastSevenDays($0.contentEditedAt) }
-    case .unsorted:
       return memos.filter { $0.sessionID == nil }
     case .trash:
       return trashedMemos
-    case .session(let id):
+    case .folder(let id):
       return memos.filter { $0.sessionID == id }
     }
   }
@@ -144,7 +134,6 @@ final class HomeViewModel: ObservableObject {
     for memo in memos {
       buckets[bucket(for: memo.contentEditedAt), default: []].append(memo)
     }
-
     return DateBucket.allCases.compactMap { bucket in
       guard let memos = buckets[bucket], !memos.isEmpty else { return nil }
       return MemoListSection(id: bucket.rawValue, title: bucket.title, memos: sortedMemos(memos))
@@ -152,55 +141,29 @@ final class HomeViewModel: ObservableObject {
   }
 
   private func bucket(for date: Date) -> DateBucket {
-    if calendar.isDateInToday(date) {
-      return .today
-    }
-    if calendar.isDateInYesterday(date) {
-      return .yesterday
-    }
-
-    let startOfToday = calendar.startOfDay(for: Date())
-    let startOfDate = calendar.startOfDay(for: date)
-    let days = calendar.dateComponents([.day], from: startOfDate, to: startOfToday).day ?? 0
-
-    if days <= 7 {
-      return .previous7Days
-    }
-    if days <= 30 {
-      return .previous30Days
-    }
+    if calendar.isDateInToday(date) { return .today }
+    if calendar.isDateInYesterday(date) { return .yesterday }
+    let days = calendar.dateComponents(
+      [.day],
+      from: calendar.startOfDay(for: date),
+      to: calendar.startOfDay(for: Date())
+    ).day ?? 0
+    if days <= 7 { return .previous7Days }
+    if days <= 30 { return .previous30Days }
     return .earlier
-  }
-
-  private func isInLastSevenDays(_ date: Date) -> Bool {
-    let startOfToday = calendar.startOfDay(for: Date())
-    guard let start = calendar.date(byAdding: .day, value: -6, to: startOfToday) else {
-      return false
-    }
-    return date >= start
   }
 }
 
 private enum DateBucket: String, CaseIterable {
-  case today
-  case yesterday
-  case previous7Days
-  case previous30Days
-  case earlier
+  case today, yesterday, previous7Days, previous30Days, earlier
 
   var title: String {
     switch self {
-    case .today:
-      return "Today"
-    case .yesterday:
-      return "Yesterday"
-    case .previous7Days:
-      return "Previous 7 Days"
-    case .previous30Days:
-      return "Previous 30 Days"
-    case .earlier:
-      return "Earlier"
+    case .today: return "Today"
+    case .yesterday: return "Yesterday"
+    case .previous7Days: return "Previous 7 Days"
+    case .previous30Days: return "Previous 30 Days"
+    case .earlier: return "Earlier"
     }
   }
 }
-

@@ -1,17 +1,24 @@
 import SwiftUI
 
+private extension View {
+  @ViewBuilder
+  func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+    if condition { transform(self) } else { self }
+  }
+}
+
 struct HomeView: View {
   @ObservedObject var viewModel: HomeViewModel
   let onOpenMemo: (UUID) -> Void
   let onTrashMemo: (UUID) -> Void
   let onRestoreMemo: (UUID) -> Void
   let onEmptyTrash: () -> Void
-  let onCreateSession: (String) -> Void
-  let onRenameSession: (UUID, String) -> Void
-  let onDeleteSession: (UUID) -> Void
-  let onAssignSession: (UUID, UUID?) -> Void
+  let onCreateFolder: (String) -> Void
+  let onRenameFolder: (UUID, String) -> Void
+  let onDeleteFolder: (UUID) -> Void
+  let onAssignFolder: (UUID, UUID?) -> Void
 
-  @State private var isSessionManagerPresented = false
+  @State private var isFolderManagerPresented = false
   @State private var isSidebarVisible = true
 
   var body: some View {
@@ -23,12 +30,12 @@ struct HomeView: View {
       mainContent
     }
     .onAppear { viewModel.reload() }
-    .sheet(isPresented: $isSessionManagerPresented) {
-      SessionManagerView(
-        sessions: viewModel.sessions,
-        onCreate: onCreateSession,
-        onRename: onRenameSession,
-        onDelete: onDeleteSession
+    .sheet(isPresented: $isFolderManagerPresented) {
+      FolderManagerView(
+        folders: viewModel.folders,
+        onCreate: onCreateFolder,
+        onRename: onRenameFolder,
+        onDelete: onDeleteFolder
       )
     }
   }
@@ -60,41 +67,37 @@ struct HomeView: View {
       .padding(.bottom, 4)
 
       ScrollView {
-        VStack(alignment: .leading, spacing: 10) {
-          VStack(alignment: .leading, spacing: 3) {
-            sidebarRow(.all)
-            sidebarRow(.pinned)
-            sidebarRow(.today)
-            sidebarRow(.last7Days)
-            sidebarRow(.unsorted)
-            sidebarRow(.trash)
-          }
+        VStack(alignment: .leading, spacing: 3) {
+          sidebarRow(scope: .all, title: "All Memos", icon: "tray.full", count: viewModel.allMemosCount)
 
-          if viewModel.isSessionReady {
-            VStack(alignment: .leading, spacing: 3) {
-              Text("Sessions")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 9)
-                .padding(.top, 3)
-
-              ForEach(viewModel.sessions, id: \.id) { session in
-                sidebarRow(.session(session.id), title: session.name, icon: "folder")
-              }
+          if viewModel.isFolderReady && !viewModel.folders.isEmpty {
+            ForEach(viewModel.folders, id: \.id) { folder in
+              sidebarRow(
+                scope: .folder(folder.id),
+                title: folder.name,
+                icon: "folder",
+                count: viewModel.folderCount(id: folder.id),
+                folderID: folder.id
+              )
             }
           }
+
+          Divider()
+            .padding(.vertical, 4)
+
+          sidebarRow(scope: .trash, title: "Trash", icon: "trash", count: viewModel.trashCount)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
       }
 
-      if viewModel.isSessionReady {
+      if viewModel.isFolderReady {
         Divider()
         Button {
-          isSessionManagerPresented = true
+          isFolderManagerPresented = true
         } label: {
-          Label("Sessions", systemImage: "ellipsis.circle")
+          Label("New Folder", systemImage: "folder.badge.plus")
             .font(.system(size: 12))
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
@@ -109,19 +112,30 @@ struct HomeView: View {
     .background(Color(NSColor.controlBackgroundColor))
   }
 
-  private func sidebarRow(_ scope: HomeScope, title: String? = nil, icon: String? = nil) -> some View {
+  private func sidebarRow(
+    scope: HomeScope,
+    title: String,
+    icon: String,
+    count: Int,
+    folderID: UUID? = nil
+  ) -> some View {
     let selected = viewModel.selectedScope == scope
     return Button {
       viewModel.selectedScope = scope
     } label: {
       HStack(spacing: 8) {
-        Image(systemName: icon ?? scope.iconName)
+        Image(systemName: icon)
           .font(.system(size: 12))
           .frame(width: 16)
-        Text(title ?? scope.title)
+        Text(title)
           .font(.system(size: 12))
           .lineLimit(1)
         Spacer(minLength: 0)
+        if count > 0 {
+          Text("\(count)")
+            .font(.system(size: 11))
+            .foregroundStyle(.tertiary)
+        }
       }
       .padding(.horizontal, 8)
       .padding(.vertical, 5)
@@ -133,6 +147,15 @@ struct HomeView: View {
     }
     .buttonStyle(.plain)
     .frame(maxWidth: .infinity, alignment: .leading)
+    .if(folderID != nil) { view in
+      view.dropDestination(for: MemoTransferItem.self) { items, _ in
+        guard let item = items.first, let fid = folderID else { return false }
+        onAssignFolder(item.id, fid)
+        return true
+      } isTargeted: { isTargeted in
+        if isTargeted { viewModel.selectedScope = scope }
+      }
+    }
   }
 
   // MARK: - Main
@@ -213,14 +236,13 @@ struct HomeView: View {
             MemoRowView(
               memo: memo,
               isTrashView: viewModel.selectedScope == .trash,
-              sessions: viewModel.sessions,
-              sessionName: viewModel.sessionName(for: memo),
-              isSessionReady: viewModel.isSessionReady,
+              folders: viewModel.folders,
+              isFolderReady: viewModel.isFolderReady,
               onOpen: { onOpenMemo(memo.id) },
               onTrash: { onTrashMemo(memo.id) },
               onRestore: { onRestoreMemo(memo.id) },
               onSetListPinned: { isPinned in viewModel.setListPinned(id: memo.id, isPinned: isPinned) },
-              onAssignSession: { sessionID in onAssignSession(memo.id, sessionID) }
+              onAssignFolder: { folderID in onAssignFolder(memo.id, folderID) }
             )
             .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 14))
           }
@@ -231,11 +253,15 @@ struct HomeView: View {
   }
 
   private var scopeTitle: String {
-    if case .session(let id) = viewModel.selectedScope,
-       let session = viewModel.sessions.first(where: { $0.id == id }) {
-      return session.name
+    if case .folder(let id) = viewModel.selectedScope,
+       let folder = viewModel.folders.first(where: { $0.id == id }) {
+      return folder.name
     }
-    return viewModel.selectedScope.title
+    switch viewModel.selectedScope {
+    case .all: return "All Memos"
+    case .trash: return "Trash"
+    case .folder: return "Folder"
+    }
   }
 
   private var memoCount: Int {
@@ -248,14 +274,13 @@ struct HomeView: View {
 private struct MemoRowView: View {
   let memo: PersistedMemo
   let isTrashView: Bool
-  let sessions: [Session]
-  let sessionName: String?
-  let isSessionReady: Bool
+  let folders: [Folder]
+  let isFolderReady: Bool
   let onOpen: () -> Void
   let onTrash: () -> Void
   let onRestore: () -> Void
   let onSetListPinned: (Bool) -> Void
-  let onAssignSession: (UUID?) -> Void
+  let onAssignFolder: (UUID?) -> Void
 
   @State private var isHovered = false
 
@@ -283,13 +308,6 @@ private struct MemoRowView: View {
           Text(previewText)
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
-            .lineLimit(1)
-        }
-
-        if let sessionName {
-          Text(sessionName)
-            .font(.system(size: 10))
-            .foregroundStyle(.tertiary)
             .lineLimit(1)
         }
       }
@@ -334,6 +352,7 @@ private struct MemoRowView: View {
     .contentShape(Rectangle())
     .onTapGesture { if !isTrashView { onOpen() } }
     .onHover { isHovered = $0 }
+    .if(!isTrashView) { $0.draggable(MemoTransferItem(id: memo.id)) }
     .contextMenu {
       if isTrashView {
         Button("Restore") { onRestore() }
@@ -342,9 +361,9 @@ private struct MemoRowView: View {
           onSetListPinned(!memo.isListPinned)
         }
 
-        if isSessionReady {
+        if isFolderReady {
           Divider()
-          sessionAssignMenu
+          folderAssignMenu
         }
 
         Divider()
@@ -354,13 +373,14 @@ private struct MemoRowView: View {
   }
 
   @ViewBuilder
-  private var sessionAssignMenu: some View {
-    Menu("Move to Session") {
-      Button("Unsorted") { onAssignSession(nil) }
-      if !sessions.isEmpty {
-        Divider()
-        ForEach(sessions, id: \.id) { session in
-          Button(session.name) { onAssignSession(session.id) }
+  private var folderAssignMenu: some View {
+    if memo.sessionID != nil {
+      Button("Remove from Folder") { onAssignFolder(nil) }
+    }
+    if !folders.isEmpty {
+      Menu("Move to Folder") {
+        ForEach(folders, id: \.id) { folder in
+          Button(folder.name) { onAssignFolder(folder.id) }
         }
       }
     }
@@ -386,64 +406,22 @@ private struct MemoRowView: View {
   }
 }
 
-// MARK: - Sidebar Metadata
+// MARK: - Folder Manager Sheet
 
-private extension HomeScope {
-  var title: String {
-    switch self {
-    case .all:
-      return "All Memos"
-    case .pinned:
-      return "Pinned"
-    case .today:
-      return "Today"
-    case .last7Days:
-      return "Last 7 Days"
-    case .unsorted:
-      return "Unsorted"
-    case .trash:
-      return "Trash"
-    case .session:
-      return "Session"
-    }
-  }
-
-  var iconName: String {
-    switch self {
-    case .all:
-      return "tray.full"
-    case .pinned:
-      return "pin"
-    case .today:
-      return "sun.max"
-    case .last7Days:
-      return "calendar"
-    case .unsorted:
-      return "tray"
-    case .trash:
-      return "trash"
-    case .session:
-      return "folder"
-    }
-  }
-}
-
-// MARK: - Session Manager Sheet
-
-private struct SessionManagerView: View {
-  let sessions: [Session]
+private struct FolderManagerView: View {
+  let folders: [Folder]
   let onCreate: (String) -> Void
   let onRename: (UUID, String) -> Void
   let onDelete: (UUID) -> Void
 
   @Environment(\.dismiss) private var dismiss
-  @State private var newSessionName = ""
+  @State private var newFolderName = ""
   @State private var editingNames: [UUID: String] = [:]
 
   var body: some View {
     VStack(spacing: 0) {
       HStack {
-        Text("Sessions")
+        Text("Folders")
           .font(.system(size: 14, weight: .semibold))
         Spacer()
         Button("Done") { dismiss() }
@@ -456,23 +434,23 @@ private struct SessionManagerView: View {
       Divider()
 
       List {
-        ForEach(sessions, id: \.id) { session in
+        ForEach(folders, id: \.id) { folder in
           HStack {
             TextField(
-              session.name,
+              folder.name,
               text: Binding(
-                get: { editingNames[session.id] ?? session.name },
-                set: { editingNames[session.id] = $0 }
+                get: { editingNames[folder.id] ?? folder.name },
+                set: { editingNames[folder.id] = $0 }
               )
             )
             .textFieldStyle(.plain)
             .font(.system(size: 13))
-            .onSubmit { commitRename(for: session) }
+            .onSubmit { commitRename(for: folder) }
 
             Spacer()
 
             Button {
-              onDelete(session.id)
+              onDelete(folder.id)
             } label: {
               Image(systemName: "trash")
                 .font(.system(size: 11))
@@ -481,17 +459,17 @@ private struct SessionManagerView: View {
             .buttonStyle(.plain)
           }
           .padding(.vertical, 2)
-          .onDisappear { commitRename(for: session) }
+          .onDisappear { commitRename(for: folder) }
         }
 
         HStack {
           Image(systemName: "plus")
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
-          TextField("New Session", text: $newSessionName)
+          TextField("New Folder", text: $newFolderName)
             .textFieldStyle(.plain)
             .font(.system(size: 13))
-            .onSubmit { submitNewSession() }
+            .onSubmit { submitNewFolder() }
         }
         .padding(.vertical, 2)
       }
@@ -500,20 +478,20 @@ private struct SessionManagerView: View {
     .frame(width: 320, height: 360)
   }
 
-  private func commitRename(for session: Session) {
-    guard let edited = editingNames[session.id] else { return }
+  private func commitRename(for folder: Folder) {
+    guard let edited = editingNames[folder.id] else { return }
     let trimmed = edited.trimmingCharacters(in: .whitespacesAndNewlines)
     if trimmed.isEmpty {
-      editingNames[session.id] = session.name
-    } else if trimmed != session.name {
-      onRename(session.id, trimmed)
+      editingNames[folder.id] = folder.name
+    } else if trimmed != folder.name {
+      onRename(folder.id, trimmed)
     }
   }
 
-  private func submitNewSession() {
-    let trimmed = newSessionName.trimmingCharacters(in: .whitespacesAndNewlines)
+  private func submitNewFolder() {
+    let trimmed = newFolderName.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return }
     onCreate(trimmed)
-    newSessionName = ""
+    newFolderName = ""
   }
 }

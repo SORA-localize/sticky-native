@@ -3,11 +3,11 @@ import Foundation
 @MainActor
 final class PersistenceCoordinator {
   private let store: SQLiteStore
-  private let sessionStore: SessionStore
+  private let folderStore: FolderStore
 
   init(store: SQLiteStore) {
     self.store = store
-    self.sessionStore = SessionStore(store: store)
+    self.folderStore = FolderStore(store: store)
   }
 
   func saveDraft(id: UUID, draft: String, colorIndex: Int) {
@@ -78,28 +78,28 @@ final class PersistenceCoordinator {
     (try? store.fetchOpen()) ?? []
   }
 
-  // MARK: - Session
+  // MARK: - Folder
 
-  var isSessionReady: Bool { store.isSessionReady }
+  var isFolderReady: Bool { store.isSessionReady }
 
   @discardableResult
-  func createSession(name: String) -> Session? {
-    sessionStore.create(name: name)
+  func createFolder(name: String) -> Folder? {
+    folderStore.create(name: name)
   }
 
-  func renameSession(id: UUID, name: String) {
-    sessionStore.rename(id: id, name: name)
+  func renameFolder(id: UUID, name: String) {
+    folderStore.rename(id: id, name: name)
   }
 
-  func deleteSession(id: UUID) {
-    sessionStore.delete(id: id)
+  func deleteFolder(id: UUID) {
+    folderStore.delete(id: id)
   }
 
-  func fetchAllSessions() -> [Session] {
-    sessionStore.fetchAll()
+  func fetchAllFolders() -> [Folder] {
+    folderStore.fetchAll()
   }
 
-  func assignSession(memoID: UUID, sessionID: UUID?) {
-    sessionStore.assignToMemo(memoID: memoID, sessionID: sessionID)
+  func assignFolder(memoID: UUID, folderID: UUID?) {
+    folderStore.assignToMemo(memoID: memoID, folderID: folderID)
   }
 }
