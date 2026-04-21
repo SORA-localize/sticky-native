@@ -12,11 +12,14 @@ struct HomeView: View {
   let onAssignSession: (UUID, UUID?) -> Void
 
   @State private var isSessionManagerPresented = false
+  @State private var isSidebarVisible = true
 
   var body: some View {
     HStack(spacing: 0) {
-      sidebar
-      Divider()
+      if isSidebarVisible {
+        sidebar
+        Divider()
+      }
       mainContent
     }
     .onAppear { viewModel.reload() }
@@ -61,6 +64,7 @@ struct HomeView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
 
       if viewModel.isSessionReady {
@@ -71,6 +75,7 @@ struct HomeView: View {
           Label("Sessions", systemImage: "ellipsis.circle")
             .font(.system(size: 12))
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)
@@ -98,12 +103,14 @@ struct HomeView: View {
       }
       .padding(.horizontal, 8)
       .padding(.vertical, 5)
-      .frame(maxWidth: .infinity, alignment: .leading)
+      .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+      .contentShape(Rectangle())
       .background(selected ? Color.accentColor.opacity(0.18) : Color.clear)
       .clipShape(RoundedRectangle(cornerRadius: 6))
       .foregroundStyle(selected ? .primary : .secondary)
     }
     .buttonStyle(.plain)
+    .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   // MARK: - Main
@@ -120,6 +127,18 @@ struct HomeView: View {
 
   private var header: some View {
     HStack(spacing: 12) {
+      Button {
+        isSidebarVisible.toggle()
+      } label: {
+        Image(systemName: "sidebar.left")
+          .font(.system(size: 13))
+          .frame(width: 24, height: 24)
+          .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(.secondary)
+      .help(isSidebarVisible ? "Hide Sidebar" : "Show Sidebar")
+
       VStack(alignment: .leading, spacing: 2) {
         Text(scopeTitle)
           .font(.system(size: 16, weight: .semibold))
@@ -464,4 +483,3 @@ private struct SessionManagerView: View {
     newSessionName = ""
   }
 }
-
