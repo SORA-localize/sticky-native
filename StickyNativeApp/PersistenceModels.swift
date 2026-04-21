@@ -15,6 +15,7 @@ struct PersistedMemo {
   let isTrash: Bool
   let createdAt: Date?
   let updatedAt: Date
+  let contentEditedAt: Date
   let sessionID: UUID?
 }
 

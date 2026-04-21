@@ -297,7 +297,7 @@ private struct MemoRowView: View {
       Spacer(minLength: 8)
 
       VStack(alignment: .trailing, spacing: 7) {
-        Text(memo.updatedAt, style: .relative)
+        Text(formattedDate(memo.contentEditedAt))
           .font(.system(size: 10))
           .foregroundStyle(.tertiary)
           .lineLimit(1)
@@ -364,6 +364,25 @@ private struct MemoRowView: View {
         }
       }
     }
+  }
+
+  private func formattedDate(_ date: Date) -> String {
+    let cal = Calendar.current
+    if cal.isDateInToday(date) {
+      return date.formatted(.dateTime.hour().minute())
+    }
+    let days = cal.dateComponents(
+      [.day],
+      from: cal.startOfDay(for: date),
+      to: cal.startOfDay(for: Date())
+    ).day ?? 0
+    if days <= 7 {
+      return date.formatted(.dateTime.weekday(.wide))
+    }
+    if cal.isDate(date, equalTo: Date(), toGranularity: .year) {
+      return date.formatted(.dateTime.month(.wide).day())
+    }
+    return date.formatted(.dateTime.year().month(.defaultDigits).day())
   }
 }
 

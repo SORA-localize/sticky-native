@@ -118,9 +118,9 @@ final class HomeViewModel: ObservableObject {
     case .pinned:
       return memos.filter(\.isListPinned)
     case .today:
-      return memos.filter { calendar.isDateInToday($0.updatedAt) }
+      return memos.filter { calendar.isDateInToday($0.contentEditedAt) }
     case .last7Days:
-      return memos.filter { isInLastSevenDays($0.updatedAt) }
+      return memos.filter { isInLastSevenDays($0.contentEditedAt) }
     case .unsorted:
       return memos.filter { $0.sessionID == nil }
     case .trash:
@@ -132,17 +132,17 @@ final class HomeViewModel: ObservableObject {
 
   private func sortedMemos(_ memos: [PersistedMemo]) -> [PersistedMemo] {
     memos.sorted { lhs, rhs in
-      if lhs.updatedAt == rhs.updatedAt {
+      if lhs.contentEditedAt == rhs.contentEditedAt {
         return lhs.id.uuidString < rhs.id.uuidString
       }
-      return lhs.updatedAt > rhs.updatedAt
+      return lhs.contentEditedAt > rhs.contentEditedAt
     }
   }
 
   private func dateSections(for memos: [PersistedMemo]) -> [MemoListSection] {
     var buckets: [DateBucket: [PersistedMemo]] = [:]
     for memo in memos {
-      buckets[bucket(for: memo.updatedAt), default: []].append(memo)
+      buckets[bucket(for: memo.contentEditedAt), default: []].append(memo)
     }
 
     return DateBucket.allCases.compactMap { bucket in
