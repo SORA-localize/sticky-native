@@ -35,8 +35,30 @@ struct HomeView: View {
 
   // MARK: - Sidebar
 
+  private var sidebarToggleButton: some View {
+    Button {
+      isSidebarVisible.toggle()
+    } label: {
+      Image(systemName: "sidebar.left")
+        .font(.system(size: 13))
+        .frame(width: 24, height: 24)
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .foregroundStyle(.secondary)
+    .help(isSidebarVisible ? "Hide Sidebar" : "Show Sidebar")
+  }
+
   private var sidebar: some View {
     VStack(spacing: 0) {
+      HStack {
+        Spacer()
+        sidebarToggleButton
+      }
+      .padding(.horizontal, 12)
+      .padding(.top, 10)
+      .padding(.bottom, 4)
+
       ScrollView {
         VStack(alignment: .leading, spacing: 10) {
           VStack(alignment: .leading, spacing: 3) {
@@ -119,7 +141,6 @@ struct HomeView: View {
     VStack(spacing: 0) {
       header
       Divider()
-      searchBar
       memoList
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -127,17 +148,9 @@ struct HomeView: View {
 
   private var header: some View {
     HStack(spacing: 12) {
-      Button {
-        isSidebarVisible.toggle()
-      } label: {
-        Image(systemName: "sidebar.left")
-          .font(.system(size: 13))
-          .frame(width: 24, height: 24)
-          .contentShape(Rectangle())
+      if !isSidebarVisible {
+        sidebarToggleButton
       }
-      .buttonStyle(.plain)
-      .foregroundStyle(.secondary)
-      .help(isSidebarVisible ? "Hide Sidebar" : "Show Sidebar")
 
       VStack(alignment: .leading, spacing: 2) {
         Text(scopeTitle)
@@ -150,6 +163,20 @@ struct HomeView: View {
 
       Spacer()
 
+      HStack(spacing: 7) {
+        Image(systemName: "magnifyingglass")
+          .foregroundStyle(.secondary)
+          .font(.system(size: 12))
+        TextField("Search", text: $viewModel.searchQuery)
+          .textFieldStyle(.plain)
+          .font(.system(size: 13))
+          .frame(width: 160)
+      }
+      .padding(.horizontal, 9)
+      .padding(.vertical, 6)
+      .background(Color(NSColor.controlBackgroundColor))
+      .clipShape(RoundedRectangle(cornerRadius: 7))
+
       if viewModel.selectedScope == .trash && !viewModel.trashedMemos.isEmpty {
         Button("Empty Trash") { onEmptyTrash() }
           .foregroundStyle(.red)
@@ -160,24 +187,6 @@ struct HomeView: View {
     .padding(.horizontal, 18)
     .padding(.top, 14)
     .padding(.bottom, 12)
-  }
-
-  private var searchBar: some View {
-    HStack(spacing: 7) {
-      Image(systemName: "magnifyingglass")
-        .foregroundStyle(.secondary)
-        .font(.system(size: 12))
-      TextField("Search", text: $viewModel.searchQuery)
-        .textFieldStyle(.plain)
-        .font(.system(size: 13))
-    }
-    .padding(.horizontal, 11)
-    .padding(.vertical, 7)
-    .background(Color(NSColor.controlBackgroundColor))
-    .clipShape(RoundedRectangle(cornerRadius: 7))
-    .padding(.horizontal, 18)
-    .padding(.top, 12)
-    .padding(.bottom, 8)
   }
 
   @ViewBuilder
