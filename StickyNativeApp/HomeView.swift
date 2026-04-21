@@ -118,8 +118,8 @@ struct HomeView: View {
   private var mainContent: some View {
     VStack(spacing: 0) {
       header
-      searchBar
       Divider()
+      searchBar
       memoList
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -159,7 +159,7 @@ struct HomeView: View {
     }
     .padding(.horizontal, 18)
     .padding(.top, 14)
-    .padding(.bottom, 8)
+    .padding(.bottom, 12)
   }
 
   private var searchBar: some View {
@@ -176,7 +176,8 @@ struct HomeView: View {
     .background(Color(NSColor.controlBackgroundColor))
     .clipShape(RoundedRectangle(cornerRadius: 7))
     .padding(.horizontal, 18)
-    .padding(.bottom, 10)
+    .padding(.top, 12)
+    .padding(.bottom, 8)
   }
 
   @ViewBuilder
@@ -192,22 +193,27 @@ struct HomeView: View {
     } else {
       List {
         ForEach(viewModel.sections) { section in
-          Section(section.title) {
-            ForEach(section.memos, id: \.id) { memo in
-              MemoRowView(
-                memo: memo,
-                isTrashView: viewModel.selectedScope == .trash,
-                sessions: viewModel.sessions,
-                sessionName: viewModel.sessionName(for: memo),
-                isSessionReady: viewModel.isSessionReady,
-                onOpen: { onOpenMemo(memo.id) },
-                onTrash: { onTrashMemo(memo.id) },
-                onRestore: { onRestoreMemo(memo.id) },
-                onSetListPinned: { isPinned in viewModel.setListPinned(id: memo.id, isPinned: isPinned) },
-                onAssignSession: { sessionID in onAssignSession(memo.id, sessionID) }
-              )
-              .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 14))
-            }
+          Text(section.title)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .textCase(nil)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 12, leading: 18, bottom: 2, trailing: 18))
+
+          ForEach(section.memos, id: \.id) { memo in
+            MemoRowView(
+              memo: memo,
+              isTrashView: viewModel.selectedScope == .trash,
+              sessions: viewModel.sessions,
+              sessionName: viewModel.sessionName(for: memo),
+              isSessionReady: viewModel.isSessionReady,
+              onOpen: { onOpenMemo(memo.id) },
+              onTrash: { onTrashMemo(memo.id) },
+              onRestore: { onRestoreMemo(memo.id) },
+              onSetListPinned: { isPinned in viewModel.setListPinned(id: memo.id, isPinned: isPinned) },
+              onAssignSession: { sessionID in onAssignSession(memo.id, sessionID) }
+            )
+            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 14))
           }
         }
       }
