@@ -72,13 +72,7 @@ struct HomeView: View {
 
           if viewModel.isFolderReady && !viewModel.folders.isEmpty {
             ForEach(viewModel.folders, id: \.id) { folder in
-              sidebarRow(
-                scope: .folder(folder.id),
-                title: folder.name,
-                icon: "folder",
-                count: viewModel.folderCount(id: folder.id),
-                folderID: folder.id
-              )
+              folderSidebarRow(folder: folder)
             }
           }
 
@@ -112,50 +106,28 @@ struct HomeView: View {
     .background(Color(NSColor.controlBackgroundColor))
   }
 
-  private func sidebarRow(
-    scope: HomeScope,
-    title: String,
-    icon: String,
-    count: Int,
-    folderID: UUID? = nil
-  ) -> some View {
-    let selected = viewModel.selectedScope == scope
-    return Button {
-      viewModel.selectedScope = scope
-    } label: {
-      HStack(spacing: 8) {
-        Image(systemName: icon)
-          .font(.system(size: 12))
-          .frame(width: 16)
-        Text(title)
-          .font(.system(size: 12))
-          .lineLimit(1)
-        Spacer(minLength: 0)
-        if count > 0 {
-          Text("\(count)")
-            .font(.system(size: 11))
-            .foregroundStyle(.tertiary)
-        }
-      }
-      .padding(.horizontal, 8)
-      .padding(.vertical, 5)
-      .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
-      .contentShape(Rectangle())
-      .background(selected ? Color.accentColor.opacity(0.18) : Color.clear)
-      .clipShape(RoundedRectangle(cornerRadius: 6))
-      .foregroundStyle(selected ? .primary : .secondary)
-    }
-    .buttonStyle(.plain)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .if(folderID != nil) { view in
-      view.dropDestination(for: MemoTransferItem.self) { items, _ in
-        guard let item = items.first, let fid = folderID else { return false }
-        onAssignFolder(item.id, fid)
-        return true
-      } isTargeted: { isTargeted in
-        if isTargeted { viewModel.selectedScope = scope }
-      }
-    }
+  private func sidebarRow(scope: HomeScope, title: String, icon: String, count: Int) -> some View {
+    SidebarRowView(
+      scope: scope,
+      title: title,
+      icon: icon,
+      count: count,
+      isSelected: viewModel.selectedScope == scope,
+      onSelect: { viewModel.selectedScope = scope },
+      onDrop: nil
+    )
+  }
+
+  private func folderSidebarRow(folder: Folder) -> some View {
+    SidebarRowView(
+      scope: .folder(folder.id),
+      title: folder.name,
+      icon: "folder",
+      count: viewModel.folderCount(id: folder.id),
+      isSelected: viewModel.selectedScope == .folder(folder.id),
+      onSelect: { viewModel.selectedScope = .folder(folder.id) },
+      onDrop: { memoID in onAssignFolder(memoID, folder.id) }
+    )
   }
 
   // MARK: - Main
@@ -403,6 +375,57 @@ private struct MemoRowView: View {
       return date.formatted(.dateTime.month(.wide).day())
     }
     return date.formatted(.dateTime.year().month(.defaultDigits).day())
+  }
+}
+
+// MARK: - Sidebar Row
+
+private struct SidebarRowView: View {
+  let scope: HomeScope
+  let title: String
+  let icon: String
+  let count: Int
+  let isSelected: Bool
+  let onSelect: () -> Void
+  let onDrop: ((UUID) -> Void)?
+
+  @State private var isDropTargeted = false
+
+  var body: some View {
+    Button(action: onSelect) {
+      HStack(spacing: 8) {
+        Image(systemName: icon)
+          .font(.system(size: 12))
+          .frame(width: 16)
+        Text(title)
+          .font(.system(size: 12))
+          .lineLimit(1)
+        Spacer(minLength: 0)
+        if count > 0 {
+          Text("\(count)")
+            .font(.system(size: 11))
+            .foregroundStyle(.tertiary)
+        }
+      }
+      .padding(.horizontal, 8)
+      .padding(.vertical, 5)
+      .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+      .contentShape(Rectangle())
+      .background((isSelected || isDropTargeted) ? Color.accentColor.opacity(0.18) : Color.clear)
+      .clipShape(RoundedRectangle(cornerRadius: 6))
+      .foregroundStyle(isSelected ? .primary : .secondary)
+    }
+    .buttonStyle(.plain)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .if(onDrop != nil) { view in
+      view.dropDestination(for: MemoTransferItem.self) { items, _ in
+        guard let item = items.first else { return false }
+        onDrop?(item.id)
+        return true
+      } isTargeted: { targeted in
+        isDropTargeted = targeted
+      }
+    }
   }
 }
 
