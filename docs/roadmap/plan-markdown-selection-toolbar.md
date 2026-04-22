@@ -45,7 +45,7 @@ LINE の chat input のように、テキスト選択中だけ formatting toolba
 | ファイル | 扱い |
 |----------|------|
 | `StickyNativeApp/CheckableTextView.swift` | Phase 1 主対象。selection rect 解決、toolbar 表示 / 非表示、focus / IME guard を probe |
-| `StickyNativeApp/MarkdownFormattingToolbar.swift` | Phase 1 で分離が必要な場合のみ新規候補 |
+| `StickyNativeApp/MarkdownFormattingToolbar.swift` | Phase 1 で editor-local toolbar UI が肥大化する場合のみ新規候補 |
 | `StickyNativeApp/EditorCommand.swift` | Phase 2 以降。toolbar button 実行時の command metadata を追加 |
 | `StickyNativeApp/EditorTextOperations.swift` | Phase 2 以降。Markdown marker wrap / unwrap を追加 |
 | `StickyNativeApp/MemoEditorView.swift` | 確認のみ |
@@ -154,23 +154,26 @@ Persistence:
 - 変更しない
 - toolbar state は保存しない
 
-### AppKit UI 候補
+### AppKit UI 方針
 
-初期候補:
+Phase 1 初期実装:
 
-- `NSPopover`
+- editor-local `NSView` overlay
 
 理由:
 
-- dismissal と positioning が比較的簡単
-- display-only probe に向く
+- `NSTextView` の subview に閉じるため first responder を奪いにくい
+- display-only probe では button action が不要
+- positioning と dismissal を editor-local state だけで扱える
 
 fallback:
 
+- `NSPopover`
 - borderless `NSPanel`
 
 切り替え条件:
 
+- editor-local `NSView` では clipping / positioning が破綻する
 - `NSPopover` が editor first responder を奪う
 - first mouse / zero-click input を乱す
 - selection が toolbar 表示で不自然に消える
@@ -234,8 +237,9 @@ Gate:
 - selection がある時だけ display-only toolbar を出す
 - button は disabled または no-op
 - `EditorCommand` / `EditorTextOperations` は変更しない
-- `NSPopover` を初期候補にする
-- `NSPopover` が focus を乱す場合だけ `NSPanel` へ切り替える
+- editor-local `NSView` overlay を初期実装にする
+- toolbar UI が肥大化する場合だけ `MarkdownFormattingToolbar.swift` へ分離する
+- editor-local overlay で clipping / positioning が破綻する場合だけ `NSPopover` / `NSPanel` を再検討する
 
 Gate:
 
@@ -341,7 +345,7 @@ Gate:
 - Phase 1 では `EditorCommand` / `EditorTextOperations` を変更しない。
 - Phase 2 以降の toolbar button は `EditorCommand` 経由で `EditorTextOperations` を呼ぶ。
 - toolbar state は `NSTextView` 近傍の AppKit transient UI とし、SwiftUI app state には載せない。
-- `NSPopover` を初期候補にし、focus / first mouse に問題が出る場合だけ borderless `NSPanel` へ切り替える。
+- Phase 1 は editor-local `NSView` overlay を初期実装にし、focus / positioning に問題が出る場合だけ `NSPopover` / borderless `NSPanel` を再検討する。
 - rich text 保存が必要になった場合は別計画で document model と migration を扱う。
 
 ---

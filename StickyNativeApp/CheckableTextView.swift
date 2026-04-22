@@ -82,6 +82,78 @@ private enum MarkdownLiteParser {
   }
 }
 
+private final class MarkdownSelectionToolbar: NSView {
+  static let preferredSize = NSSize(width: 154, height: 34)
+
+  private let stackView = NSStackView()
+  private let buttons: [NSButton]
+
+  override init(frame frameRect: NSRect) {
+    let items: [(title: String, tooltip: String)] = [
+      ("B", "太字"),
+      ("I", "斜体"),
+      ("S", "取り消し線"),
+      ("H", "テキストを強調"),
+      (">", "段落を強調"),
+    ]
+    buttons = items.map { item in
+      let button = NSButton(title: item.title, target: nil, action: nil)
+      button.bezelStyle = .texturedRounded
+      button.isBordered = false
+      button.isEnabled = false
+      button.toolTip = item.tooltip
+      button.setAccessibilityLabel(item.tooltip)
+      button.font = .systemFont(ofSize: 12, weight: .semibold)
+      button.setButtonType(.momentaryPushIn)
+      button.translatesAutoresizingMaskIntoConstraints = false
+      NSLayoutConstraint.activate([
+        button.widthAnchor.constraint(equalToConstant: 24),
+        button.heightAnchor.constraint(equalToConstant: 24),
+      ])
+      return button
+    }
+
+    super.init(frame: frameRect)
+
+    wantsLayer = true
+    layer?.backgroundColor = NSColor.windowBackgroundColor.withAlphaComponent(0.96).cgColor
+    layer?.cornerRadius = 7
+    layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.55).cgColor
+    layer?.borderWidth = 1
+    shadow = NSShadow()
+    shadow?.shadowBlurRadius = 8
+    shadow?.shadowOffset = NSSize(width: 0, height: -2)
+    shadow?.shadowColor = NSColor.black.withAlphaComponent(0.18)
+
+    stackView.orientation = .horizontal
+    stackView.alignment = .centerY
+    stackView.spacing = 4
+    stackView.edgeInsets = NSEdgeInsets(top: 5, left: 6, bottom: 5, right: 6)
+    stackView.translatesAutoresizingMaskIntoConstraints = false
+    buttons.forEach(stackView.addArrangedSubview)
+    addSubview(stackView)
+
+    NSLayoutConstraint.activate([
+      stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+      stackView.trailingAnchor.constraint(equalTo: trailingAnchor),
+      stackView.topAnchor.constraint(equalTo: topAnchor),
+      stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+    ])
+  }
+
+  required init?(coder: NSCoder) {
+    nil
+  }
+
+  override var acceptsFirstResponder: Bool {
+    false
+  }
+
+  override var intrinsicContentSize: NSSize {
+    Self.preferredSize
+  }
+}
+
 struct CheckableTextView: NSViewRepresentable {
   @Binding var text: String
   let focusToken: UUID
@@ -243,14 +315,24 @@ struct CheckableTextView: NSViewRepresentable {
       guard let textView = notification.object as? CheckboxNSTextView else { return }
       parent.text = textView.string
       refreshEditorDecorations(in: textView)
+      textView.refreshSelectionToolbar()
+    }
+
+    func textViewDidChangeSelection(_ notification: Notification) {
+      guard let textView = notification.object as? CheckboxNSTextView else { return }
+      textView.refreshSelectionToolbar()
     }
 
     func textDidBeginEditing(_ notification: Notification) {
       parent.onFocusChange(true)
+      guard let textView = notification.object as? CheckboxNSTextView else { return }
+      textView.refreshSelectionToolbar()
     }
 
     func textDidEndEditing(_ notification: Notification) {
       parent.onFocusChange(false)
+      guard let textView = notification.object as? CheckboxNSTextView else { return }
+      textView.hideSelectionToolbar()
     }
 
     func perform(_ command: EditorCommand, in textView: NSTextView) {
@@ -283,6 +365,7 @@ final class CheckboxNSTextView: NSTextView {
   private var hoveredLinkURL: URL?
   private var linkTrackingArea: NSTrackingArea?
   private var lastMouseLocationInWindow: NSPoint?
+  private var selectionToolbar: MarkdownSelectionToolbar?
 
   private static let linkAttributeKeys: [NSAttributedString.Key] = [
     .underlineStyle,
@@ -323,6 +406,7 @@ final class CheckboxNSTextView: NSTextView {
     let result = super.resignFirstResponder()
     if result {
       onFocusChange?(false)
+      hideSelectionToolbar()
     }
     return result
   }
@@ -333,6 +417,12 @@ final class CheckboxNSTextView: NSTextView {
       return
     }
     super.keyDown(with: event)
+    refreshSelectionToolbar()
+  }
+
+  override func cancelOperation(_ sender: Any?) {
+    hideSelectionToolbar()
+    super.cancelOperation(sender)
   }
 
   override func menu(for event: NSEvent) -> NSMenu? {
@@ -397,6 +487,7 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   override func mouseDown(with event: NSEvent) {
+    hideSelectionToolbar()
     if toggleCheckboxIfNeeded(for: event) {
       return
     }
@@ -404,6 +495,17 @@ final class CheckboxNSTextView: NSTextView {
       return
     }
     super.mouseDown(with: event)
+    refreshSelectionToolbar()
+  }
+
+  override func mouseDragged(with event: NSEvent) {
+    super.mouseDragged(with: event)
+    refreshSelectionToolbar()
+  }
+
+  override func mouseUp(with event: NSEvent) {
+    super.mouseUp(with: event)
+    refreshSelectionToolbar()
   }
 
   override func otherMouseDown(with event: NSEvent) {
@@ -433,6 +535,28 @@ final class CheckboxNSTextView: NSTextView {
     }
   }
 
+  fileprivate func refreshSelectionToolbar() {
+    guard shouldShowSelectionToolbar, let toolbarFrame = selectionToolbarFrame() else {
+      hideSelectionToolbar()
+      return
+    }
+
+    let toolbar = selectionToolbar ?? {
+      let toolbar = MarkdownSelectionToolbar(frame: .zero)
+      toolbar.translatesAutoresizingMaskIntoConstraints = true
+      addSubview(toolbar)
+      selectionToolbar = toolbar
+      return toolbar
+    }()
+
+    toolbar.frame = toolbarFrame
+    toolbar.isHidden = false
+  }
+
+  fileprivate func hideSelectionToolbar() {
+    selectionToolbar?.isHidden = true
+  }
+
   fileprivate func refreshSmartLinkHoverFromLastMouseLocation() {
     refreshSmartLinkHover(at: lastMouseLocationInWindow)
   }
@@ -447,6 +571,52 @@ final class CheckboxNSTextView: NSTextView {
 
   private func perform(_ command: EditorCommand) {
     onPerformCommand?(command, self)
+  }
+
+  private var shouldShowSelectionToolbar: Bool {
+    guard selectedRange().length > 0 else { return false }
+    guard !hasMarkedText() else { return false }
+    guard window?.firstResponder === self else { return false }
+    return true
+  }
+
+  private func selectionToolbarFrame() -> NSRect? {
+    guard let layoutManager, let textContainer else { return nil }
+    let selectedRange = selectedRange()
+    guard selectedRange.length > 0 else { return nil }
+
+    layoutManager.ensureLayout(for: textContainer)
+    let glyphRange = layoutManager.glyphRange(forCharacterRange: selectedRange, actualCharacterRange: nil)
+    guard glyphRange.length > 0 else { return nil }
+
+    var selectionRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textContainer)
+    selectionRect.origin.x += textContainerOrigin.x
+    selectionRect.origin.y += textContainerOrigin.y
+    guard isFinite(selectionRect), !selectionRect.isEmpty else { return nil }
+
+    let toolbarSize = selectionToolbar?.intrinsicContentSize ?? MarkdownSelectionToolbar.preferredSize
+    let verticalGap: CGFloat = 6
+    let horizontalInset: CGFloat = 6
+    let availableWidth = max(bounds.width, toolbarSize.width + horizontalInset * 2)
+    let proposedX = selectionRect.midX - toolbarSize.width / 2
+    let x = min(max(horizontalInset, proposedX), availableWidth - toolbarSize.width - horizontalInset)
+
+    let proposedAboveY = selectionRect.minY - toolbarSize.height - verticalGap
+    let y: CGFloat
+    if proposedAboveY >= bounds.minY + verticalGap {
+      y = proposedAboveY
+    } else {
+      y = selectionRect.maxY + verticalGap
+    }
+
+    return NSRect(origin: NSPoint(x: x, y: y), size: toolbarSize)
+  }
+
+  private func isFinite(_ rect: NSRect) -> Bool {
+    rect.origin.x.isFinite &&
+      rect.origin.y.isFinite &&
+      rect.size.width.isFinite &&
+      rect.size.height.isFinite
   }
 
   private func toggleCheckboxIfNeeded(for event: NSEvent) -> Bool {
