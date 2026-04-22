@@ -35,12 +35,8 @@ private enum MarkdownLiteParser {
     while location < nsText.length {
       let lineRange = nsText.lineRange(for: NSRange(location: location, length: 0))
       let visibleRange = visibleLineRange(from: lineRange, in: nsText)
-      if visibleRange.length > 0 {
-        let line = nsText.substring(with: visibleRange)
-        let body = line.drop { $0 == " " || $0 == "\t" }
-        if body.hasPrefix("☑") {
-          decorations.append(MarkdownLiteDecoration(range: visibleRange))
-        }
+      if let completedTextRange = completedTaskTextRange(in: visibleRange, text: nsText) {
+        decorations.append(MarkdownLiteDecoration(range: completedTextRange))
       }
 
       let nextLocation = NSMaxRange(lineRange)
@@ -59,6 +55,30 @@ private enum MarkdownLiteParser {
       length -= 1
     }
     return NSRange(location: lineRange.location, length: length)
+  }
+
+  private static func completedTaskTextRange(in visibleRange: NSRange, text: NSString) -> NSRange? {
+    var location = visibleRange.location
+    let end = NSMaxRange(visibleRange)
+
+    while location < end {
+      let character = text.substring(with: NSRange(location: location, length: 1))
+      guard character == " " || character == "\t" else { break }
+      location += 1
+    }
+
+    guard location < end else { return nil }
+    guard text.substring(with: NSRange(location: location, length: 1)) == "☑" else { return nil }
+    location += 1
+
+    while location < end {
+      let character = text.substring(with: NSRange(location: location, length: 1))
+      guard character == " " || character == "\t" else { break }
+      location += 1
+    }
+
+    guard location < end else { return nil }
+    return NSRange(location: location, length: end - location)
   }
 }
 
