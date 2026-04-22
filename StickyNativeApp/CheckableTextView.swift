@@ -82,28 +82,67 @@ private enum MarkdownLiteParser {
   }
 }
 
+private enum MarkdownSelectionAction: CaseIterable {
+  case bold, italic, strikethrough, highlight, quote
+
+  var symbolName: String {
+    switch self {
+    case .bold: return "bold"
+    case .italic: return "italic"
+    case .strikethrough: return "strikethrough"
+    case .highlight: return "highlighter"
+    case .quote: return "quote.bubble"
+    }
+  }
+
+  var tooltip: String {
+    switch self {
+    case .bold: return "太字"
+    case .italic: return "斜体"
+    case .strikethrough: return "取り消し線"
+    case .highlight: return "ハイライト"
+    case .quote: return "引用"
+    }
+  }
+
+  func apply(to text: String, selectedRange: NSRange) -> EditorTextEdit? {
+    switch self {
+    case .bold:
+      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "**", suffix: "**")
+    case .italic:
+      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "*", suffix: "*")
+    case .strikethrough:
+      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "~~", suffix: "~~")
+    case .highlight:
+      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "==", suffix: "==")
+    case .quote:
+      return EditorTextOperations.prefixLines(in: text, selectedRange: selectedRange, linePrefix: "> ")
+    }
+  }
+}
+
 private final class MarkdownSelectionToolbar: NSView {
-  static let preferredSize = NSSize(width: 154, height: 34)
+  static let preferredSize = NSSize(width: 148, height: 34)
+
+  var onAction: ((MarkdownSelectionAction) -> Void)?
 
   private let stackView = NSStackView()
+  private let itemActions = MarkdownSelectionAction.allCases
   private let buttons: [NSButton]
 
   override init(frame frameRect: NSRect) {
-    let items: [(title: String, tooltip: String)] = [
-      ("B", "太字"),
-      ("I", "斜体"),
-      ("S", "取り消し線"),
-      ("H", "テキストを強調"),
-      (">", "段落を強調"),
-    ]
-    buttons = items.map { item in
-      let button = NSButton(title: item.title, target: nil, action: nil)
+    let symbolConfig = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular)
+    buttons = MarkdownSelectionAction.allCases.map { action in
+      let image = NSImage(systemSymbolName: action.symbolName, accessibilityDescription: action.tooltip)?
+        .withSymbolConfiguration(symbolConfig)
+      let button = NSButton(frame: .zero)
+      button.image = image
+      button.imageScaling = .scaleProportionallyDown
       button.bezelStyle = .texturedRounded
       button.isBordered = false
-      button.isEnabled = false
-      button.toolTip = item.tooltip
-      button.setAccessibilityLabel(item.tooltip)
-      button.font = .systemFont(ofSize: 12, weight: .semibold)
+      button.isEnabled = true
+      button.toolTip = action.tooltip
+      button.setAccessibilityLabel(action.tooltip)
       button.setButtonType(.momentaryPushIn)
       button.translatesAutoresizingMaskIntoConstraints = false
       NSLayoutConstraint.activate([
@@ -141,16 +180,19 @@ private final class MarkdownSelectionToolbar: NSView {
     ])
   }
 
-  required init?(coder: NSCoder) {
-    nil
-  }
+  required init?(coder: NSCoder) { nil }
 
-  override var acceptsFirstResponder: Bool {
-    false
-  }
+  override var acceptsFirstResponder: Bool { false }
+  override var intrinsicContentSize: NSSize { Self.preferredSize }
 
-  override var intrinsicContentSize: NSSize {
-    Self.preferredSize
+  func handleClick(at point: NSPoint) {
+    let pointInStack = convert(point, to: stackView)
+    for (index, button) in buttons.enumerated() {
+      if button.frame.contains(pointInStack) {
+        onAction?(itemActions[index])
+        return
+      }
+    }
   }
 }
 
@@ -487,6 +529,12 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   override func mouseDown(with event: NSEvent) {
+    let pointInView = convert(event.locationInWindow, from: nil)
+    if let toolbar = selectionToolbar, !toolbar.isHidden, toolbar.frame.contains(pointInView) {
+      let pointInToolbar = toolbar.convert(pointInView, from: self)
+      toolbar.handleClick(at: pointInToolbar)
+      return
+    }
     hideSelectionToolbar()
     if toggleCheckboxIfNeeded(for: event) {
       return
@@ -544,6 +592,9 @@ final class CheckboxNSTextView: NSTextView {
     let toolbar = selectionToolbar ?? {
       let toolbar = MarkdownSelectionToolbar(frame: .zero)
       toolbar.translatesAutoresizingMaskIntoConstraints = true
+      toolbar.onAction = { [weak self] action in
+        self?.applyMarkdownAction(action)
+      }
       addSubview(toolbar)
       selectionToolbar = toolbar
       return toolbar
@@ -571,6 +622,16 @@ final class CheckboxNSTextView: NSTextView {
 
   private func perform(_ command: EditorCommand) {
     onPerformCommand?(command, self)
+  }
+
+  private func applyMarkdownAction(_ action: MarkdownSelectionAction) {
+    let range = selectedRange()
+    guard range.length > 0, !hasMarkedText() else { return }
+    guard let edit = action.apply(to: string, selectedRange: range) else { return }
+    guard shouldChangeText(in: edit.range, replacementString: edit.replacement) else { return }
+    textStorage?.replaceCharacters(in: edit.range, with: edit.replacement)
+    didChangeText()
+    setSelectedRange(edit.selectedRange)
   }
 
   private var shouldShowSelectionToolbar: Bool {
