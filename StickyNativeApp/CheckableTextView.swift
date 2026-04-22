@@ -436,6 +436,19 @@ final class CheckboxNSTextView: NSTextView {
     true
   }
 
+  // NSTextView intercepts all mouse events within its bounds via hitTest.
+  // Return self for toolbar button area clicks so our mouseDown override handles them,
+  // keeping the text selection intact when a toolbar action fires.
+  override func hitTest(_ point: NSPoint) -> NSView? {
+    if let toolbar = selectionToolbar, !toolbar.isHidden, let superview {
+      let pointInSelf = convert(point, from: superview)
+      if toolbar.frame.contains(pointInSelf) {
+        return self
+      }
+    }
+    return super.hitTest(point)
+  }
+
   override func becomeFirstResponder() -> Bool {
     let result = super.becomeFirstResponder()
     if result {
