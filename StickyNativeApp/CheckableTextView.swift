@@ -110,6 +110,7 @@ struct CheckableTextView: NSViewRepresentable {
     if coordinator.appliedFontSize != fontSize {
       textView.font = .systemFont(ofSize: fontSize)
       coordinator.appliedFontSize = fontSize
+      textView.refreshSmartLinkHoverFromLastMouseLocation()
     }
 
     applyTextContainerWidth(scrollView: scrollView, textView: textView, coordinator: coordinator)
@@ -166,6 +167,7 @@ struct CheckableTextView: NSViewRepresentable {
       ) { [weak self, weak scrollView] _ in
         guard let self, let scrollView, let textView = self.textView else { return }
         self.parent.applyTextContainerWidth(scrollView: scrollView, textView: textView, coordinator: self)
+        textView.refreshSmartLinkHoverFromLastMouseLocation()
       }
     }
 
@@ -216,6 +218,25 @@ final class CheckboxNSTextView: NSTextView {
   var onPerformCommand: ((EditorCommand, NSTextView) -> Void)?
   var onFocusChange: ((Bool) -> Void)?
   private var detectedLinks: [SmartLinkRange] = []
+  private var hoveredLinkRange: NSRange?
+  private var hoveredLinkURL: URL?
+  private var linkTrackingArea: NSTrackingArea?
+  private var lastMouseLocationInWindow: NSPoint?
+
+  private static let linkAttributeKeys: [NSAttributedString.Key] = [
+    .underlineStyle,
+    .foregroundColor,
+  ]
+
+  private static let baseLinkAttributes: [NSAttributedString.Key: Any] = [
+    .underlineStyle: NSUnderlineStyle.single.rawValue,
+    .foregroundColor: NSColor.linkColor,
+  ]
+
+  private static let hoverLinkAttributes: [NSAttributedString.Key: Any] = [
+    .underlineStyle: NSUnderlineStyle.thick.rawValue,
+    .foregroundColor: NSColor.controlAccentColor,
+  ]
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     true
@@ -278,6 +299,34 @@ final class CheckboxNSTextView: NSTextView {
     return menu
   }
 
+  override func updateTrackingAreas() {
+    if let linkTrackingArea {
+      removeTrackingArea(linkTrackingArea)
+    }
+
+    let trackingArea = NSTrackingArea(
+      rect: .zero,
+      options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect],
+      owner: self,
+      userInfo: nil
+    )
+    addTrackingArea(trackingArea)
+    linkTrackingArea = trackingArea
+
+    super.updateTrackingAreas()
+  }
+
+  override func mouseMoved(with event: NSEvent) {
+    lastMouseLocationInWindow = event.locationInWindow
+    refreshSmartLinkHover(at: event.locationInWindow)
+    super.mouseMoved(with: event)
+  }
+
+  override func mouseExited(with event: NSEvent) {
+    clearSmartLinkHover()
+    super.mouseExited(with: event)
+  }
+
   override func mouseDown(with event: NSEvent) {
     if toggleCheckboxIfNeeded(for: event) {
       return
@@ -296,24 +345,12 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   fileprivate func refreshSmartLinks(using detector: SmartLinkDetector) {
-    let textLength = (string as NSString).length
-    let fullTextRange = NSRange(location: 0, length: textLength)
-
-    if textLength > 0, let layoutManager {
-      layoutManager.removeTemporaryAttribute(.underlineStyle, forCharacterRange: fullTextRange)
-      layoutManager.removeTemporaryAttribute(.foregroundColor, forCharacterRange: fullTextRange)
-    }
-
     detectedLinks = detector.links(in: string)
+    refreshSmartLinkHoverFromLastMouseLocation()
+  }
 
-    guard textLength > 0, let layoutManager else { return }
-    let attributes: [NSAttributedString.Key: Any] = [
-      .underlineStyle: NSUnderlineStyle.single.rawValue,
-      .foregroundColor: NSColor.linkColor,
-    ]
-    for link in detectedLinks where NSMaxRange(link.range) <= textLength {
-      layoutManager.addTemporaryAttributes(attributes, forCharacterRange: link.range)
-    }
+  fileprivate func refreshSmartLinkHoverFromLastMouseLocation() {
+    refreshSmartLinkHover(at: lastMouseLocationInWindow)
   }
 
   @objc private func performEditorCommand(_ sender: NSMenuItem) {
@@ -339,13 +376,20 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   private func characterIndex(for event: NSEvent) -> Int? {
+    characterIndex(at: event.locationInWindow)
+  }
+
+  private func characterIndex(at pointInWindow: NSPoint) -> Int? {
     guard let layoutManager, let textContainer else { return nil }
-    let pointInView = convert(event.locationInWindow, from: nil)
+    let pointInView = convert(pointInWindow, from: nil)
     let textOrigin = textContainerOrigin
     let pointInContainer = NSPoint(
       x: pointInView.x - textOrigin.x,
       y: pointInView.y - textOrigin.y
     )
+    guard isPointInLaidOutText(pointInContainer, layoutManager: layoutManager, textContainer: textContainer) else {
+      return nil
+    }
     let index = layoutManager.characterIndex(
       for: pointInContainer,
       in: textContainer,
@@ -363,6 +407,88 @@ final class CheckboxNSTextView: NSTextView {
     detectedLinks.first { link in
       characterIndex >= link.range.location && characterIndex < NSMaxRange(link.range)
     }?.url
+  }
+
+  private func smartLink(at pointInWindow: NSPoint) -> SmartLinkRange? {
+    guard let index = characterIndex(at: pointInWindow) else { return nil }
+    return detectedLinks.first { link in
+      index >= link.range.location && index < NSMaxRange(link.range)
+    }
+  }
+
+  private func refreshSmartLinkHover(at pointInWindow: NSPoint?) {
+    guard !hasMarkedText() else { return }
+    guard let pointInWindow else {
+      clearSmartLinkHover()
+      return
+    }
+
+    let hoveredLink = smartLink(at: pointInWindow)
+    hoveredLinkRange = hoveredLink?.range
+    hoveredLinkURL = hoveredLink?.url
+    applySmartLinkAttributes()
+    updateSmartLinkCursor(at: pointInWindow)
+  }
+
+  private func clearSmartLinkHover() {
+    hoveredLinkRange = nil
+    hoveredLinkURL = nil
+    applySmartLinkAttributes()
+  }
+
+  private func applySmartLinkAttributes() {
+    let textLength = (string as NSString).length
+    guard textLength > 0, let layoutManager else { return }
+    let fullTextRange = NSRange(location: 0, length: textLength)
+
+    for key in Self.linkAttributeKeys {
+      layoutManager.removeTemporaryAttribute(key, forCharacterRange: fullTextRange)
+    }
+
+    for link in detectedLinks where NSMaxRange(link.range) <= textLength {
+      layoutManager.addTemporaryAttributes(Self.baseLinkAttributes, forCharacterRange: link.range)
+    }
+
+    guard let hoveredLinkRange, NSMaxRange(hoveredLinkRange) <= textLength else {
+      self.hoveredLinkRange = nil
+      hoveredLinkURL = nil
+      return
+    }
+    layoutManager.addTemporaryAttributes(Self.hoverLinkAttributes, forCharacterRange: hoveredLinkRange)
+  }
+
+  private func updateSmartLinkCursor(at pointInWindow: NSPoint) {
+    if hoveredLinkURL != nil {
+      NSCursor.pointingHand.set()
+      return
+    }
+
+    let pointInView = convert(pointInWindow, from: nil)
+    let pointInContainer = NSPoint(
+      x: pointInView.x - textContainerOrigin.x,
+      y: pointInView.y - textContainerOrigin.y
+    )
+    if isPointInTextContainer(pointInContainer) {
+      NSCursor.iBeam.set()
+    }
+  }
+
+  private func isPointInLaidOutText(
+    _ point: NSPoint,
+    layoutManager: NSLayoutManager,
+    textContainer: NSTextContainer
+  ) -> Bool {
+    guard isPointInTextContainer(point) else { return false }
+    layoutManager.ensureLayout(for: textContainer)
+    let hitSlop: CGFloat = 3
+    let usedRect = layoutManager.usedRect(for: textContainer).insetBy(dx: -hitSlop, dy: -hitSlop)
+    return usedRect.contains(point)
+  }
+
+  private func isPointInTextContainer(_ point: NSPoint) -> Bool {
+    guard let textContainer else { return false }
+    let containerSize = textContainer.containerSize
+    return point.x >= 0 && point.y >= 0 && point.x <= containerSize.width && point.y <= containerSize.height
   }
 
   private func openSmartLinkIfNeeded(for event: NSEvent) -> Bool {
