@@ -107,14 +107,6 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     onPinChange(memo.id, pinned)
   }
 
-  func windowDidBecomeKey(_ notification: Notification) {
-    NSLog("[MemoWindowController] windowDidBecomeKey")
-  }
-
-  func windowDidBecomeMain(_ notification: Notification) {
-    NSLog("[MemoWindowController] windowDidBecomeMain")
-  }
-
   static func isDraftEmpty(_ draft: String) -> Bool {
     draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
