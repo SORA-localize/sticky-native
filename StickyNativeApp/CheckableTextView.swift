@@ -6,6 +6,10 @@ private struct SmartLinkRange {
   let url: URL
 }
 
+private struct MarkdownLiteDecoration {
+  let range: NSRange
+}
+
 private final class SmartLinkDetector {
   private let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
 
@@ -19,6 +23,42 @@ private final class SmartLinkDetector {
         guard let url = result.url else { return nil }
         return SmartLinkRange(range: result.range, url: url)
       }
+  }
+}
+
+private enum MarkdownLiteParser {
+  static func completedTaskLineDecorations(in text: String) -> [MarkdownLiteDecoration] {
+    let nsText = text as NSString
+    var decorations: [MarkdownLiteDecoration] = []
+    var location = 0
+
+    while location < nsText.length {
+      let lineRange = nsText.lineRange(for: NSRange(location: location, length: 0))
+      let visibleRange = visibleLineRange(from: lineRange, in: nsText)
+      if visibleRange.length > 0 {
+        let line = nsText.substring(with: visibleRange)
+        let body = line.drop { $0 == " " || $0 == "\t" }
+        if body.hasPrefix("☑") {
+          decorations.append(MarkdownLiteDecoration(range: visibleRange))
+        }
+      }
+
+      let nextLocation = NSMaxRange(lineRange)
+      guard nextLocation > location else { break }
+      location = nextLocation
+    }
+
+    return decorations
+  }
+
+  private static func visibleLineRange(from lineRange: NSRange, in text: NSString) -> NSRange {
+    var length = lineRange.length
+    while length > 0 {
+      let character = text.substring(with: NSRange(location: lineRange.location + length - 1, length: 1))
+      guard character == "\n" || character == "\r" else { break }
+      length -= 1
+    }
+    return NSRange(location: lineRange.location, length: length)
   }
 }
 
@@ -54,7 +94,7 @@ struct CheckableTextView: NSViewRepresentable {
     context.coordinator.focusToken = focusToken
     context.coordinator.observeBounds(of: scrollView)
     applyDynamicConfiguration(scrollView: scrollView, textView: textView, coordinator: context.coordinator)
-    context.coordinator.refreshSmartLinks(in: textView)
+    context.coordinator.refreshEditorDecorations(in: textView)
     DispatchQueue.main.async {
       self.applyTextContainerWidth(scrollView: scrollView, textView: textView, coordinator: context.coordinator)
       textView.window?.makeFirstResponder(textView)
@@ -73,7 +113,7 @@ struct CheckableTextView: NSViewRepresentable {
       textView.string = text
       textView.setSelectedRange(clampedRange(selectedRange, in: text))
     }
-    context.coordinator.refreshSmartLinks(in: textView)
+    context.coordinator.refreshEditorDecorations(in: textView)
 
     if context.coordinator.focusToken != focusToken {
       context.coordinator.focusToken = focusToken
@@ -182,7 +222,7 @@ struct CheckableTextView: NSViewRepresentable {
     func textDidChange(_ notification: Notification) {
       guard let textView = notification.object as? CheckboxNSTextView else { return }
       parent.text = textView.string
-      refreshSmartLinks(in: textView)
+      refreshEditorDecorations(in: textView)
     }
 
     func textDidBeginEditing(_ notification: Notification) {
@@ -203,12 +243,13 @@ struct CheckableTextView: NSViewRepresentable {
       textView.didChangeText()
       textView.setSelectedRange(edit.selectedRange)
       if let checkboxTextView = textView as? CheckboxNSTextView {
-        refreshSmartLinks(in: checkboxTextView)
+        refreshEditorDecorations(in: checkboxTextView)
       }
     }
 
-    func refreshSmartLinks(in textView: CheckboxNSTextView) {
+    func refreshEditorDecorations(in textView: CheckboxNSTextView) {
       guard !textView.hasMarkedText() else { return }
+      textView.refreshMarkdownLiteDecorations()
       textView.refreshSmartLinks(using: smartLinkDetector)
     }
   }
@@ -236,6 +277,14 @@ final class CheckboxNSTextView: NSTextView {
   private static let hoverLinkAttributes: [NSAttributedString.Key: Any] = [
     .underlineStyle: NSUnderlineStyle.thick.rawValue,
     .foregroundColor: NSColor.controlAccentColor,
+  ]
+
+  private static let markdownLiteAttributeKeys: [NSAttributedString.Key] = [
+    .strikethroughStyle,
+  ]
+
+  private static let completedTaskLineAttributes: [NSAttributedString.Key: Any] = [
+    .strikethroughStyle: NSUnderlineStyle.single.rawValue,
   ]
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -347,6 +396,21 @@ final class CheckboxNSTextView: NSTextView {
   fileprivate func refreshSmartLinks(using detector: SmartLinkDetector) {
     detectedLinks = detector.links(in: string)
     refreshSmartLinkHoverFromLastMouseLocation()
+  }
+
+  fileprivate func refreshMarkdownLiteDecorations() {
+    let textLength = (string as NSString).length
+    guard textLength > 0, let layoutManager else { return }
+    let fullTextRange = NSRange(location: 0, length: textLength)
+
+    for key in Self.markdownLiteAttributeKeys {
+      layoutManager.removeTemporaryAttribute(key, forCharacterRange: fullTextRange)
+    }
+
+    for decoration in MarkdownLiteParser.completedTaskLineDecorations(in: string)
+      where NSMaxRange(decoration.range) <= textLength {
+      layoutManager.addTemporaryAttributes(Self.completedTaskLineAttributes, forCharacterRange: decoration.range)
+    }
   }
 
   fileprivate func refreshSmartLinkHoverFromLastMouseLocation() {
