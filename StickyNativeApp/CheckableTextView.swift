@@ -1,6 +1,27 @@
 import AppKit
 import SwiftUI
 
+private struct SmartLinkRange {
+  let range: NSRange
+  let url: URL
+}
+
+private final class SmartLinkDetector {
+  private let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+
+  func links(in text: String) -> [SmartLinkRange] {
+    guard let detector else { return [] }
+    let nsText = text as NSString
+    let fullRange = NSRange(location: 0, length: nsText.length)
+    return detector
+      .matches(in: text, options: [], range: fullRange)
+      .compactMap { result in
+        guard let url = result.url else { return nil }
+        return SmartLinkRange(range: result.range, url: url)
+      }
+  }
+}
+
 struct CheckableTextView: NSViewRepresentable {
   @Binding var text: String
   let focusToken: UUID
@@ -33,6 +54,7 @@ struct CheckableTextView: NSViewRepresentable {
     context.coordinator.focusToken = focusToken
     context.coordinator.observeBounds(of: scrollView)
     applyDynamicConfiguration(scrollView: scrollView, textView: textView, coordinator: context.coordinator)
+    context.coordinator.refreshSmartLinks(in: textView)
     DispatchQueue.main.async {
       self.applyTextContainerWidth(scrollView: scrollView, textView: textView, coordinator: context.coordinator)
       textView.window?.makeFirstResponder(textView)
@@ -51,6 +73,7 @@ struct CheckableTextView: NSViewRepresentable {
       textView.string = text
       textView.setSelectedRange(clampedRange(selectedRange, in: text))
     }
+    context.coordinator.refreshSmartLinks(in: textView)
 
     if context.coordinator.focusToken != focusToken {
       context.coordinator.focusToken = focusToken
@@ -120,6 +143,7 @@ struct CheckableTextView: NSViewRepresentable {
     var appliedTextContainerWidth: CGFloat?
     weak var observedContentView: NSClipView?
     private var boundsObserver: NSObjectProtocol?
+    private let smartLinkDetector = SmartLinkDetector()
 
     init(_ parent: CheckableTextView) {
       self.parent = parent
@@ -154,8 +178,9 @@ struct CheckableTextView: NSViewRepresentable {
     }
 
     func textDidChange(_ notification: Notification) {
-      guard let textView = notification.object as? NSTextView else { return }
+      guard let textView = notification.object as? CheckboxNSTextView else { return }
       parent.text = textView.string
+      refreshSmartLinks(in: textView)
     }
 
     func textDidBeginEditing(_ notification: Notification) {
@@ -175,6 +200,14 @@ struct CheckableTextView: NSViewRepresentable {
       textView.textStorage?.replaceCharacters(in: edit.range, with: edit.replacement)
       textView.didChangeText()
       textView.setSelectedRange(edit.selectedRange)
+      if let checkboxTextView = textView as? CheckboxNSTextView {
+        refreshSmartLinks(in: checkboxTextView)
+      }
+    }
+
+    func refreshSmartLinks(in textView: CheckboxNSTextView) {
+      guard !textView.hasMarkedText() else { return }
+      textView.refreshSmartLinks(using: smartLinkDetector)
     }
   }
 }
@@ -182,6 +215,7 @@ struct CheckableTextView: NSViewRepresentable {
 final class CheckboxNSTextView: NSTextView {
   var onPerformCommand: ((EditorCommand, NSTextView) -> Void)?
   var onFocusChange: ((Bool) -> Void)?
+  private var detectedLinks: [SmartLinkRange] = []
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     true
@@ -214,6 +248,19 @@ final class CheckboxNSTextView: NSTextView {
   override func menu(for event: NSEvent) -> NSMenu? {
     let menu = NSMenu()
 
+    if let url = url(for: event) {
+      let openItem = NSMenuItem(title: "リンクを開く", action: #selector(openSmartLink(_:)), keyEquivalent: "")
+      openItem.target = self
+      openItem.representedObject = url
+      menu.addItem(openItem)
+
+      let copyItem = NSMenuItem(title: "リンクをコピー", action: #selector(copySmartLink(_:)), keyEquivalent: "")
+      copyItem.target = self
+      copyItem.representedObject = url
+      menu.addItem(copyItem)
+      menu.addItem(.separator())
+    }
+
     for command in EditorCommand.contextMenuCommands {
       let item = NSMenuItem(title: command.menuTitle, action: #selector(performEditorCommand(_:)), keyEquivalent: "")
       item.target = self
@@ -235,7 +282,31 @@ final class CheckboxNSTextView: NSTextView {
     if toggleCheckboxIfNeeded(for: event) {
       return
     }
+    if openSmartLinkIfNeeded(for: event) {
+      return
+    }
     super.mouseDown(with: event)
+  }
+
+  fileprivate func refreshSmartLinks(using detector: SmartLinkDetector) {
+    let textLength = (string as NSString).length
+    let fullTextRange = NSRange(location: 0, length: textLength)
+
+    if textLength > 0, let layoutManager {
+      layoutManager.removeTemporaryAttribute(.underlineStyle, forCharacterRange: fullTextRange)
+      layoutManager.removeTemporaryAttribute(.foregroundColor, forCharacterRange: fullTextRange)
+    }
+
+    detectedLinks = detector.links(in: string)
+
+    guard textLength > 0, let layoutManager else { return }
+    let attributes: [NSAttributedString.Key: Any] = [
+      .underlineStyle: NSUnderlineStyle.single.rawValue,
+      .foregroundColor: NSColor.linkColor,
+    ]
+    for link in detectedLinks where NSMaxRange(link.range) <= textLength {
+      layoutManager.addTemporaryAttributes(attributes, forCharacterRange: link.range)
+    }
   }
 
   @objc private func performEditorCommand(_ sender: NSMenuItem) {
@@ -251,7 +322,17 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   private func toggleCheckboxIfNeeded(for event: NSEvent) -> Bool {
-    guard let layoutManager, let textContainer else { return false }
+    guard let index = characterIndex(for: event) else { return false }
+    guard index < (string as NSString).length else { return false }
+    let character = (string as NSString).substring(with: NSRange(location: index, length: 1))
+    guard character == "☐" || character == "☑" else { return false }
+    setSelectedRange((string as NSString).lineRange(for: NSRange(location: index, length: 0)))
+    onPerformCommand?(.toggleCheckbox, self)
+    return true
+  }
+
+  private func characterIndex(for event: NSEvent) -> Int? {
+    guard let layoutManager, let textContainer else { return nil }
     let pointInView = convert(event.locationInWindow, from: nil)
     let textOrigin = textContainerOrigin
     let pointInContainer = NSPoint(
@@ -263,11 +344,36 @@ final class CheckboxNSTextView: NSTextView {
       in: textContainer,
       fractionOfDistanceBetweenInsertionPoints: nil
     )
-    guard index < (string as NSString).length else { return false }
-    let character = (string as NSString).substring(with: NSRange(location: index, length: 1))
-    guard character == "☐" || character == "☑" else { return false }
-    setSelectedRange((string as NSString).lineRange(for: NSRange(location: index, length: 0)))
-    onPerformCommand?(.toggleCheckbox, self)
+    return index < (string as NSString).length ? index : nil
+  }
+
+  private func url(for event: NSEvent) -> URL? {
+    guard let index = characterIndex(for: event) else { return nil }
+    return url(at: index)
+  }
+
+  private func url(at characterIndex: Int) -> URL? {
+    detectedLinks.first { link in
+      characterIndex >= link.range.location && characterIndex < NSMaxRange(link.range)
+    }?.url
+  }
+
+  private func openSmartLinkIfNeeded(for event: NSEvent) -> Bool {
+    guard event.modifierFlags.contains(.command), let url = url(for: event) else {
+      return false
+    }
+    NSWorkspace.shared.open(url)
     return true
+  }
+
+  @objc private func openSmartLink(_ sender: NSMenuItem) {
+    guard let url = sender.representedObject as? URL else { return }
+    NSWorkspace.shared.open(url)
+  }
+
+  @objc private func copySmartLink(_ sender: NSMenuItem) {
+    guard let url = sender.representedObject as? URL else { return }
+    NSPasteboard.general.clearContents()
+    NSPasteboard.general.setString(url.absoluteString, forType: .string)
   }
 }
