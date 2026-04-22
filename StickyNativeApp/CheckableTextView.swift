@@ -129,9 +129,15 @@ private final class MarkdownSelectionToolbar: NSView {
   private let stackView = NSStackView()
   private let itemActions = MarkdownSelectionAction.allCases
   private let buttons: [NSButton]
+  private var hoveredIndex: Int? {
+    didSet {
+      guard oldValue != hoveredIndex else { return }
+      updateButtonAppearances()
+    }
+  }
 
   override init(frame frameRect: NSRect) {
-    let symbolConfig = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular)
+    let symbolConfig = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
     buttons = MarkdownSelectionAction.allCases.map { action in
       let image = NSImage(systemSymbolName: action.symbolName, accessibilityDescription: action.tooltip)?
         .withSymbolConfiguration(symbolConfig)
@@ -144,6 +150,9 @@ private final class MarkdownSelectionToolbar: NSView {
       button.toolTip = action.tooltip
       button.setAccessibilityLabel(action.tooltip)
       button.setButtonType(.momentaryPushIn)
+      button.contentTintColor = .secondaryLabelColor
+      button.wantsLayer = true
+      button.layer?.cornerRadius = 5
       button.translatesAutoresizingMaskIntoConstraints = false
       NSLayoutConstraint.activate([
         button.widthAnchor.constraint(equalToConstant: 24),
@@ -185,13 +194,42 @@ private final class MarkdownSelectionToolbar: NSView {
   override var acceptsFirstResponder: Bool { false }
   override var intrinsicContentSize: NSSize { Self.preferredSize }
 
+  func updateHoveredButton(at point: NSPoint?) {
+    guard let point else {
+      hoveredIndex = nil
+      return
+    }
+    let pointInStack = convert(point, to: stackView)
+    hoveredIndex = buttons.indices.first { buttons[$0].frame.contains(pointInStack) }
+  }
+
   func handleClick(at point: NSPoint) {
     let pointInStack = convert(point, to: stackView)
     for (index, button) in buttons.enumerated() {
       if button.frame.contains(pointInStack) {
+        flashPressed(button)
         onAction?(itemActions[index])
         return
       }
+    }
+  }
+
+  private func updateButtonAppearances() {
+    for (index, button) in buttons.enumerated() {
+      let isHovered = index == hoveredIndex
+      button.contentTintColor = isHovered ? .labelColor : .secondaryLabelColor
+      button.layer?.backgroundColor = isHovered
+        ? NSColor.labelColor.withAlphaComponent(0.08).cgColor
+        : NSColor.clear.cgColor
+    }
+  }
+
+  private func flashPressed(_ button: NSButton) {
+    button.contentTintColor = .labelColor
+    button.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.16).cgColor
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self, weak button] in
+      guard let self, let button else { return }
+      self.updateButtonAppearances()
     }
   }
 }
@@ -533,11 +571,13 @@ final class CheckboxNSTextView: NSTextView {
   override func mouseMoved(with event: NSEvent) {
     lastMouseLocationInWindow = event.locationInWindow
     refreshSmartLinkHover(at: event.locationInWindow)
+    refreshToolbarHover(at: event.locationInWindow)
     super.mouseMoved(with: event)
   }
 
   override func mouseExited(with event: NSEvent) {
     clearSmartLinkHover()
+    selectionToolbar?.updateHoveredButton(at: nil)
     super.mouseExited(with: event)
   }
 
@@ -618,11 +658,22 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   fileprivate func hideSelectionToolbar() {
+    selectionToolbar?.updateHoveredButton(at: nil)
     selectionToolbar?.isHidden = true
   }
 
   fileprivate func refreshSmartLinkHoverFromLastMouseLocation() {
     refreshSmartLinkHover(at: lastMouseLocationInWindow)
+  }
+
+  private func refreshToolbarHover(at locationInWindow: NSPoint) {
+    guard let toolbar = selectionToolbar, !toolbar.isHidden else { return }
+    let pointInView = convert(locationInWindow, from: nil)
+    if toolbar.frame.contains(pointInView) {
+      toolbar.updateHoveredButton(at: toolbar.convert(pointInView, from: self))
+    } else {
+      toolbar.updateHoveredButton(at: nil)
+    }
   }
 
   @objc private func performEditorCommand(_ sender: NSMenuItem) {
