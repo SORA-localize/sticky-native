@@ -262,69 +262,10 @@ private struct MemoRowView: View {
 
   var body: some View {
     HStack(alignment: .center, spacing: 10) {
-      VStack(alignment: .leading, spacing: 4) {
-        HStack(spacing: 6) {
-          Text(memo.title.isEmpty ? "Untitled" : memo.title)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(memo.title.isEmpty ? .secondary : .primary)
-            .lineLimit(1)
-
-          if memo.isListPinned && !isTrashView {
-            Image(systemName: "pin.fill")
-              .font(.system(size: 10))
-              .foregroundStyle(.secondary)
-          }
-        }
-
-        if !previewText.isEmpty {
-          Text(previewText)
-            .font(.system(size: 11))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-        }
-      }
-
-      Spacer(minLength: 8)
-
-      VStack(alignment: .trailing, spacing: 7) {
-        Text(formattedDate(memo.contentEditedAt))
-          .font(.system(size: 10))
-          .foregroundStyle(.tertiary)
-          .lineLimit(1)
-
-        if isTrashView {
-          Button("Restore") { onRestore() }
-            .font(.system(size: 11))
-            .buttonStyle(.plain)
-            .foregroundStyle(.blue)
-        } else {
-          HStack(spacing: 9) {
-            Button {
-              onSetListPinned(!memo.isListPinned)
-            } label: {
-              Image(systemName: memo.isListPinned ? "pin.fill" : "pin")
-                .font(.system(size: 11))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .opacity(isHovered || memo.isListPinned ? 1 : 0)
-
-            Button(action: onTrash) {
-              Image(systemName: "trash")
-                .font(.system(size: 11))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .opacity(isHovered ? 1 : 0)
-          }
-        }
-      }
-      .frame(minWidth: 76, alignment: .trailing)
+      dragSurface
+      actionSurface
     }
-    .contentShape(Rectangle())
-    .onTapGesture { if !isTrashView { onOpen() } }
     .onHover { isHovered = $0 }
-    .if(!isTrashView) { $0.draggable(MemoTransferItem(id: memo.id)) }
     .contextMenu {
       if isTrashView {
         Button("Restore") { onRestore() }
@@ -341,6 +282,90 @@ private struct MemoRowView: View {
         Divider()
         Button("Move to Trash") { onTrash() }
       }
+    }
+  }
+
+  private var memoSummary: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      HStack(spacing: 6) {
+        Text(memo.title.isEmpty ? "Untitled" : memo.title)
+          .font(.system(size: 13, weight: .medium))
+          .foregroundStyle(memo.title.isEmpty ? .secondary : .primary)
+          .lineLimit(1)
+
+        if memo.isListPinned && !isTrashView {
+          Image(systemName: "pin.fill")
+            .font(.system(size: 10))
+            .foregroundStyle(.secondary)
+        }
+      }
+
+      if !previewText.isEmpty {
+        Text(previewText)
+          .font(.system(size: 11))
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+      }
+    }
+  }
+
+  private var dragSurfaceLabel: some View {
+    HStack(alignment: .center, spacing: 10) {
+      memoSummary
+
+      Spacer(minLength: 8)
+
+      Text(formattedDate(memo.contentEditedAt))
+        .font(.system(size: 10))
+        .foregroundStyle(.tertiary)
+        .lineLimit(1)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .contentShape(Rectangle())
+  }
+
+  @ViewBuilder
+  private var dragSurface: some View {
+    if isTrashView {
+      dragSurfaceLabel
+    } else {
+      Button(action: onOpen) {
+        dragSurfaceLabel
+      }
+      .buttonStyle(.plain)
+      .draggable(MemoTransferItem(id: memo.id))
+    }
+  }
+
+  @ViewBuilder
+  private var actionSurface: some View {
+    if isTrashView {
+      Button("Restore") { onRestore() }
+        .font(.system(size: 11))
+        .buttonStyle(.plain)
+        .foregroundStyle(.blue)
+        .frame(minWidth: 54, alignment: .trailing)
+    } else {
+      HStack(spacing: 9) {
+        Button {
+          onSetListPinned(!memo.isListPinned)
+        } label: {
+          Image(systemName: memo.isListPinned ? "pin.fill" : "pin")
+            .font(.system(size: 11))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .opacity(isHovered || memo.isListPinned ? 1 : 0)
+
+        Button(action: onTrash) {
+          Image(systemName: "trash")
+            .font(.system(size: 11))
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .opacity(isHovered ? 1 : 0)
+      }
+      .frame(minWidth: 44, alignment: .trailing)
     }
   }
 
