@@ -288,6 +288,13 @@ final class CheckboxNSTextView: NSTextView {
     super.mouseDown(with: event)
   }
 
+  override func otherMouseDown(with event: NSEvent) {
+    if event.buttonNumber == 2, openSmartLink(at: event) {
+      return
+    }
+    super.otherMouseDown(with: event)
+  }
+
   fileprivate func refreshSmartLinks(using detector: SmartLinkDetector) {
     let textLength = (string as NSString).length
     let fullTextRange = NSRange(location: 0, length: textLength)
@@ -359,9 +366,14 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   private func openSmartLinkIfNeeded(for event: NSEvent) -> Bool {
-    guard event.modifierFlags.contains(.command), let url = url(for: event) else {
+    guard event.modifierFlags.contains(.command) else {
       return false
     }
+    return openSmartLink(at: event)
+  }
+
+  private func openSmartLink(at event: NSEvent) -> Bool {
+    guard let url = url(for: event) else { return false }
     NSWorkspace.shared.open(url)
     return true
   }
