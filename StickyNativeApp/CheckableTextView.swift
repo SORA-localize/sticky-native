@@ -27,6 +27,12 @@ private final class SmartLinkDetector {
 }
 
 private enum MarkdownLiteParser {
+  // Compiled once per app lifetime
+  private static let boldRegex = try? NSRegularExpression(pattern: #"\*\*[^*\n]+?\*\*"#)
+  private static let italicRegex = try? NSRegularExpression(pattern: #"(?<!\*)\*[^*\n]+?\*(?!\*)"#)
+  private static let inlineStrikethroughRegex = try? NSRegularExpression(pattern: #"~~[^\n]+?~~"#)
+  private static let highlightRegex = try? NSRegularExpression(pattern: #"==[^\n]+?=="#)
+
   static func completedTaskLineDecorations(in text: String) -> [MarkdownLiteDecoration] {
     let nsText = text as NSString
     var decorations: [MarkdownLiteDecoration] = []
@@ -45,6 +51,48 @@ private enum MarkdownLiteParser {
     }
 
     return decorations
+  }
+
+  static func boldRanges(in text: String) -> [NSRange] {
+    matchRanges(boldRegex, in: text)
+  }
+
+  static func italicRanges(in text: String) -> [NSRange] {
+    matchRanges(italicRegex, in: text)
+  }
+
+  static func inlineStrikethroughRanges(in text: String) -> [NSRange] {
+    matchRanges(inlineStrikethroughRegex, in: text)
+  }
+
+  static func highlightRanges(in text: String) -> [NSRange] {
+    matchRanges(highlightRegex, in: text)
+  }
+
+  static func quoteLineRanges(in text: String) -> [NSRange] {
+    let nsText = text as NSString
+    var ranges: [NSRange] = []
+    var location = 0
+    while location < nsText.length {
+      let lineRange = nsText.lineRange(for: NSRange(location: location, length: 0))
+      let visibleRange = visibleLineRange(from: lineRange, in: nsText)
+      if visibleRange.length >= 2 {
+        let prefix = nsText.substring(with: NSRange(location: visibleRange.location, length: 2))
+        if prefix == "> " {
+          ranges.append(visibleRange)
+        }
+      }
+      let nextLocation = NSMaxRange(lineRange)
+      guard nextLocation > location else { break }
+      location = nextLocation
+    }
+    return ranges
+  }
+
+  private static func matchRanges(_ regex: NSRegularExpression?, in text: String) -> [NSRange] {
+    guard let regex else { return [] }
+    let nsRange = NSRange(text.startIndex..., in: text)
+    return regex.matches(in: text, range: nsRange).map { $0.range }
   }
 
   private static func visibleLineRange(from lineRange: NSRange, in text: NSString) -> NSRange {
@@ -464,10 +512,20 @@ final class CheckboxNSTextView: NSTextView {
 
   private static let markdownLiteAttributeKeys: [NSAttributedString.Key] = [
     .strikethroughStyle,
+    .font,
+    .backgroundColor,
   ]
 
   private static let completedTaskLineAttributes: [NSAttributedString.Key: Any] = [
     .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+  ]
+
+  private static let highlightAttributes: [NSAttributedString.Key: Any] = [
+    .backgroundColor: NSColor.systemYellow.withAlphaComponent(0.32),
+  ]
+
+  private static let quoteLineAttributes: [NSAttributedString.Key: Any] = [
+    .backgroundColor: NSColor.labelColor.withAlphaComponent(0.05),
   ]
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -630,9 +688,31 @@ final class CheckboxNSTextView: NSTextView {
       layoutManager.removeTemporaryAttribute(key, forCharacterRange: fullTextRange)
     }
 
+    // ☑ completed task strikethrough
     for decoration in MarkdownLiteParser.completedTaskLineDecorations(in: string)
       where NSMaxRange(decoration.range) <= textLength {
       layoutManager.addTemporaryAttributes(Self.completedTaskLineAttributes, forCharacterRange: decoration.range)
+    }
+
+    // Inline decorations — font variants derived from current editor font
+    let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    let boldFont = NSFont.systemFont(ofSize: baseFont.pointSize, weight: .bold)
+    let italicFont = NSFontManager.shared.convert(baseFont, toHaveTrait: .italicFontMask)
+
+    for range in MarkdownLiteParser.boldRanges(in: string) where NSMaxRange(range) <= textLength {
+      layoutManager.addTemporaryAttributes([.font: boldFont], forCharacterRange: range)
+    }
+    for range in MarkdownLiteParser.italicRanges(in: string) where NSMaxRange(range) <= textLength {
+      layoutManager.addTemporaryAttributes([.font: italicFont], forCharacterRange: range)
+    }
+    for range in MarkdownLiteParser.inlineStrikethroughRanges(in: string) where NSMaxRange(range) <= textLength {
+      layoutManager.addTemporaryAttributes(Self.completedTaskLineAttributes, forCharacterRange: range)
+    }
+    for range in MarkdownLiteParser.highlightRanges(in: string) where NSMaxRange(range) <= textLength {
+      layoutManager.addTemporaryAttributes(Self.highlightAttributes, forCharacterRange: range)
+    }
+    for range in MarkdownLiteParser.quoteLineRanges(in: string) where NSMaxRange(range) <= textLength {
+      layoutManager.addTemporaryAttributes(Self.quoteLineAttributes, forCharacterRange: range)
     }
   }
 
