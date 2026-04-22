@@ -68,7 +68,7 @@ struct CheckableTextView: NSViewRepresentable {
     context.coordinator.observeBounds(of: scrollView)
     applyDynamicConfiguration(scrollView: scrollView, textView: textView, coordinator: context.coordinator)
 
-    if textView.string != text {
+    if !textView.hasMarkedText(), textView.string != text {
       let selectedRange = textView.selectedRange()
       textView.string = text
       textView.setSelectedRange(clampedRange(selectedRange, in: text))
@@ -238,7 +238,7 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   override func keyDown(with event: NSEvent) {
-    if let command = EditorCommand.allCases.first(where: { $0.matches(event) }) {
+    if !hasMarkedText(), let command = EditorCommand.allCases.first(where: { $0.matches(event) }) {
       perform(command)
       return
     }
