@@ -83,43 +83,46 @@ private enum MarkdownLiteParser {
 }
 
 private enum MarkdownSelectionAction: CaseIterable {
-  case bold, italic, strikethrough, highlight, clearFormatting
+  case bold, underline, strikethrough, highlight
 
   var symbolName: String {
     switch self {
     case .bold: return "bold"
-    case .italic: return "italic"
+    case .underline: return "underline"
     case .strikethrough: return "strikethrough"
     case .highlight: return "highlighter"
-    case .clearFormatting: return "eraser"
     }
   }
 
   var tooltip: String {
     switch self {
     case .bold: return "太字"
-    case .italic: return "斜体"
+    case .underline: return "下線"
     case .strikethrough: return "取り消し線"
     case .highlight: return "ハイライト"
-    case .clearFormatting: return "装飾解除"
     }
   }
 
   var formattingAction: RichTextFormattingAction {
     switch self {
     case .bold: return .bold
-    case .italic: return .italic
+    case .underline: return .underline
     case .strikethrough: return .strikethrough
     case .highlight: return .highlight
-    case .clearFormatting: return .clearFormatting
     }
   }
 }
 
 private final class MarkdownSelectionToolbar: NSView {
-  static let preferredSize = NSSize(width: 148, height: 34)
+  static let preferredSize = NSSize(width: 120, height: 34)
 
   var onAction: ((MarkdownSelectionAction) -> Void)?
+  var activeActions: Set<MarkdownSelectionAction> = [] {
+    didSet {
+      guard oldValue != activeActions else { return }
+      updateButtonAppearances()
+    }
+  }
 
   private let stackView = NSStackView()
   private let itemActions = MarkdownSelectionAction.allCases
@@ -212,10 +215,18 @@ private final class MarkdownSelectionToolbar: NSView {
   private func updateButtonAppearances() {
     for (index, button) in buttons.enumerated() {
       let isHovered = index == hoveredIndex
-      button.contentTintColor = isHovered ? .labelColor : .secondaryLabelColor
-      button.layer?.backgroundColor = isHovered
-        ? NSColor.labelColor.withAlphaComponent(0.08).cgColor
-        : NSColor.clear.cgColor
+      let isActive = activeActions.contains(itemActions[index])
+      if isActive {
+        button.contentTintColor = .controlAccentColor
+        button.layer?.backgroundColor = isHovered
+          ? NSColor.controlAccentColor.withAlphaComponent(0.18).cgColor
+          : NSColor.controlAccentColor.withAlphaComponent(0.12).cgColor
+      } else {
+        button.contentTintColor = isHovered ? .labelColor : .secondaryLabelColor
+        button.layer?.backgroundColor = isHovered
+          ? NSColor.labelColor.withAlphaComponent(0.08).cgColor
+          : NSColor.clear.cgColor
+      }
     }
   }
 
@@ -681,6 +692,18 @@ final class CheckboxNSTextView: NSTextView {
 
     toolbar.frame = toolbarFrame
     toolbar.isHidden = false
+
+    if let textStorage, selectedRange().length > 0 {
+      let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+      let activeFormattingActions = RichTextOperations.activeActions(
+        in: selectedRange(),
+        textStorage: textStorage,
+        baseFont: baseFont
+      )
+      toolbar.activeActions = Set(MarkdownSelectionAction.allCases.filter {
+        activeFormattingActions.contains($0.formattingAction)
+      })
+    }
   }
 
   fileprivate func hideSelectionToolbar() {

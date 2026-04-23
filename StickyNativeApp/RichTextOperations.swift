@@ -2,10 +2,9 @@ import AppKit
 
 enum RichTextFormattingAction {
   case bold
-  case italic
+  case underline
   case strikethrough
   case highlight
-  case clearFormatting
 }
 
 enum RichTextOperations {
@@ -23,18 +22,16 @@ enum RichTextOperations {
     switch action {
     case .bold:
       toggleFontTrait(.boldFontMask, in: targetRange, textStorage: textStorage, baseFont: baseFont)
-    case .italic:
-      toggleFontTrait(.italicFontMask, in: targetRange, textStorage: textStorage, baseFont: baseFont)
+    case .underline:
+      toggleAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, in: targetRange, textStorage: textStorage)
     case .strikethrough:
       toggleAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, in: targetRange, textStorage: textStorage)
     case .highlight:
       toggleAttribute(.backgroundColor, value: NSColor.systemYellow.withAlphaComponent(0.32), in: targetRange, textStorage: textStorage)
-    case .clearFormatting:
-      clearFormatting(in: targetRange, textStorage: textStorage, baseFont: baseFont)
     }
     textStorage.endEditing()
 
-    updateTypingAttributes(for: textView, action: action, range: targetRange, baseFont: baseFont)
+    updateTypingAttributes(for: textView, range: targetRange, baseFont: baseFont)
   }
 
   static func isMultiRangeCharacterAttributeChange(_ textView: NSTextView) -> Bool {
@@ -46,6 +43,37 @@ enum RichTextOperations {
     let range = textView.rangeForUserCharacterAttributeChange
     guard range.location != NSNotFound, range.length > 0 else { return nil }
     return range
+  }
+
+  static func activeActions(
+    in range: NSRange,
+    textStorage: NSTextStorage,
+    baseFont: NSFont
+  ) -> Set<RichTextFormattingAction> {
+    guard range.length > 0, textStorage.length > 0 else { return [] }
+    let targetRange = clampedRange(range, length: textStorage.length)
+    guard targetRange.length > 0 else { return [] }
+
+    var active: Set<RichTextFormattingAction> = []
+
+    let boldRuns = attributeRuns(for: .font, in: targetRange, textStorage: textStorage)
+    if boldRuns.allSatisfy({ ($0.value as? NSFont).map { NSFontManager.shared.traits(of: $0).contains(.boldFontMask) } ?? false }) {
+      active.insert(.bold)
+    }
+
+    if attributeRuns(for: .underlineStyle, in: targetRange, textStorage: textStorage).allSatisfy({ $0.value != nil }) {
+      active.insert(.underline)
+    }
+
+    if attributeRuns(for: .strikethroughStyle, in: targetRange, textStorage: textStorage).allSatisfy({ $0.value != nil }) {
+      active.insert(.strikethrough)
+    }
+
+    if attributeRuns(for: .backgroundColor, in: targetRange, textStorage: textStorage).allSatisfy({ $0.value != nil }) {
+      active.insert(.highlight)
+    }
+
+    return active
   }
 }
 
@@ -106,7 +134,6 @@ private extension RichTextOperations {
 
   static func updateTypingAttributes(
     for textView: NSTextView,
-    action: RichTextFormattingAction,
     range: NSRange,
     baseFont: NSFont
   ) {
@@ -123,25 +150,13 @@ private extension RichTextOperations {
     typingAttributes.removeValue(forKey: .underlineStyle)
 
     let sourceFont = (sourceAttributes[.font] as? NSFont) ?? baseFont
-    let sourceTraits = NSFontManager.shared.traits(of: sourceFont)
     var nextFont = baseFont
-    if sourceTraits.contains(.boldFontMask) {
+    if NSFontManager.shared.traits(of: sourceFont).contains(.boldFontMask) {
       nextFont = font(nextFont, adding: .boldFontMask, baseFont: baseFont)
     }
-    if sourceTraits.contains(.italicFontMask) {
-      nextFont = font(nextFont, adding: .italicFontMask, baseFont: baseFont)
-    }
 
-    typingAttributes[.font] = action == .clearFormatting ? baseFont : nextFont
+    typingAttributes[.font] = nextFont
     textView.typingAttributes = typingAttributes
-  }
-
-  static func clearFormatting(in range: NSRange, textStorage: NSTextStorage, baseFont: NSFont) {
-    textStorage.removeAttribute(.strikethroughStyle, range: range)
-    textStorage.removeAttribute(.backgroundColor, range: range)
-    textStorage.removeAttribute(.foregroundColor, range: range)
-    textStorage.removeAttribute(.underlineStyle, range: range)
-    textStorage.addAttribute(.font, value: baseFont, range: range)
   }
 
   static func font(_ font: NSFont, adding trait: NSFontTraitMask, baseFont: NSFont) -> NSFont {
