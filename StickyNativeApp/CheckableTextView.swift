@@ -407,6 +407,9 @@ struct CheckableTextView: NSViewRepresentable {
     func textViewDidChangeSelection(_ notification: Notification) {
       guard let textView = notification.object as? CheckboxNSTextView else { return }
       textView.refreshSelectionToolbar()
+      if !textView.hasMarkedText() {
+        textView.stripCharacterTypingAttributes()
+      }
     }
 
     func textDidBeginEditing(_ notification: Notification) {
@@ -702,6 +705,15 @@ final class CheckboxNSTextView: NSTextView {
   fileprivate func hideSelectionToolbar() {
     selectionToolbar?.updateHoveredButton(at: nil)
     selectionToolbar?.isHidden = true
+  }
+
+  fileprivate func stripCharacterTypingAttributes() {
+    var attrs = typingAttributes
+    attrs.removeValue(forKey: .underlineStyle)
+    attrs.removeValue(forKey: .strikethroughStyle)
+    attrs.removeValue(forKey: .backgroundColor)
+    attrs.removeValue(forKey: .foregroundColor)
+    typingAttributes = attrs
   }
 
   fileprivate func refreshSmartLinkHoverFromLastMouseLocation() {
