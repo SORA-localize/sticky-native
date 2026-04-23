@@ -95,6 +95,7 @@ struct Str {
   // MARK: - Window titles
   static var settingsWindowTitle: String { isJa ? "設定"                    : "Settings" }
   static var allMemosWindowTitle: String { isJa ? "すべてのメモ"              : "All Memos" }
+  static var launching:           String { isJa ? "起動中..."                : "Launching..." }
 
   // MARK: - Memo window: trash alert
   static var trashAlertTitle:     String { isJa ? "このメモをゴミ箱に移しますか？" : "Move this memo to trash?" }
