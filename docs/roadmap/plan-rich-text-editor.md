@@ -300,7 +300,10 @@ Gate:
 1. `RichTextContentCodec` を定義する。
    - `encode(_ attributedString: NSAttributedString) -> Data?`
    - `decode(_ data: Data) -> NSAttributedString?`
-   - 装飾なし判定 helper を持つ候補
+   - `sanitizedForPersistence(_:, baseFont:) -> NSAttributedString` 相当を持つ
+   - `normalizedForDisplay(_:, baseFont:) -> NSAttributedString` 相当を持つ
+   - 装飾なし判定 helper は sanitized content を基準に行う
+   - `encode` は内部で必ず sanitized content を作る、または sanitized content だけを受け取る
 2. `EditorContentFactory` を定義する。
    - `makeDisplayContent(draft: String, richTextData: Data?) -> NSAttributedString`
    - `richTextData` が `nil` の場合は `draft` から plain attributed string を作る
@@ -311,6 +314,7 @@ Gate:
 Gate:
 
 - decode / fallback の場所が `EditorContentFactory` に固定されている
+- encode 前の sanitizer と decode 後の display normalization の責務が `RichTextContentCodec` に固定されている
 - RTF decode 失敗時に memo window を開ける
 - SQLite layer が RTF の意味を知らない
 - `draft` fallback の plain attributed string が editor 表示に使える
@@ -334,14 +338,16 @@ Gate:
    - `plainText: String`
    - `richTextData: Data?`
 2. `NSAttributedString` から `EditorContent` を作る factory を定義する。
-3. 装飾なしの場合は `richTextData = nil` にする。
-4. `PersistenceCoordinator.saveMemoContent` を追加する。
-5. `draft` は `plainText` として必ず保存する。
-6. `richTextData` は optional BLOB として保存する。
+3. `EditorContent` 生成は必ず `RichTextContentCodec` の sanitizer を通す。
+4. 装飾なしの場合は sanitized content 判定により `richTextData = nil` にする。
+5. `PersistenceCoordinator.saveMemoContent` を追加する。
+6. `draft` は `plainText` として必ず保存する。
+7. `richTextData` は optional BLOB として保存する。
 
 Gate:
 
 - `EditorContent` が save payload の唯一の型になっている
+- `EditorContent` 生成時に unsupported attributes / temporary-only attributes が raw RTF に入らない
 - `saveMemoContent` が `draft` / `title` / `rich_text_data` を一度に扱う
 - `saveDraft` 互換 API がある場合も内部委譲のみで二重経路になっていない
 - 空メモ判定は引き続き `plainText` に対して行う
@@ -388,25 +394,27 @@ Gate:
 
 作業:
 
-1. RTF 保存対象 attributes を明文化する。
+1. RTF 保存対象 attributes を `RichTextContentCodec` の sanitizer 実装責務として明文化する。
    - 保存対象: bold / italic trait、`.strikethroughStyle`, `.backgroundColor`
    - 直接信頼しない対象: `.font` の family / size
    - 非保存対象: Smart Link hover 用 `.underlineStyle`, `.foregroundColor`
-2. RTF に `.font` が含まれる場合でも、decode 後に current editor base font + persisted traits へ正規化する。
-3. encode 前に editor base font size / family を永続意味として扱わないよう、bold / italic trait だけを抽出する方針を固定する。
-4. Smart Links は保存された attributed string へ temporary attributes として重ねる。
-5. hover styling は `layoutManager` temporary attributes に限定し、`textStorage` へ永続書き込みしない。
-6. refresh order を固定する。
+2. `sanitizedForPersistence(_:, baseFont:)` 相当で、encode 前に保存対象 attribute だけの attributed string を生成する。
+3. `normalizedForDisplay(_:, baseFont:)` 相当で、decode 後に current editor base font + persisted traits へ正規化する。
+4. `encode` は sanitizer を通らない raw attributed string を RTF 化しない。
+5. Smart Links は保存された attributed string へ temporary attributes として重ねる。
+6. hover styling は `layoutManager` temporary attributes に限定し、`textStorage` へ永続書き込みしない。
+7. refresh order を固定する。
    - rich text content を textStorage に反映
    - current editor base font + traits normalization
    - Smart Links detection
    - link temporary attributes apply
    - hover temporary attributes apply
-7. RTF encode 前に temporary-only attributes が混入しないことを確認する。
+8. RTF encode 前に temporary-only attributes が混入しないことを確認する。
 
 Gate:
 
 - URL hover / underline が RTF data に保存されない
+- decode した RTF に Smart Link temporary attrs / unsupported font family-size が永続意味として残らない
 - 保存済み太字 / ハイライトと Smart Links 表示が共存する
 - link hover を動かしても autosave が発火しない
 - Smart Links の open / copy / hover behavior が regression しない
@@ -609,11 +617,14 @@ Gate:
 
 新規候補 `RichTextContentCodec.swift`:
 
-- RTF encode / decode だけを担当する
-- 装飾なし判定を持つ場合も、DB や window state を知らない pure helper に留める
+- RTF encode / decode と attribute sanitizer / display normalization を担当する
+- `sanitizedForPersistence(_:, baseFont:)` 相当で、保存対象 attributes だけの attributed string を生成する
+- `normalizedForDisplay(_:, baseFont:)` 相当で、decode 後の content を current editor base font + persisted traits に正規化する
+- `encode` は raw editor attributed string をそのまま RTF 化せず、内部で sanitizer を通す、または sanitized content だけを受け取る
+- 装飾なし判定を持つ場合も sanitized content を基準にし、DB や window state を知らない pure helper に留める
 - Smart Link hover など temporary-only attributes は encode 対象にしない
 - `.font` の family / size を永続仕様として信頼しない
-- encode 前または decode 後に current editor base font + bold / italic traits へ正規化する
+- unsupported font family / size、Smart Link temporary attrs は decode / display 後に永続意味として残さない
 
 新規候補 `EditorContentFactory.swift`:
 
