@@ -18,4 +18,5 @@ release/
 StickyNative_distribution/
 *.dmg
 *.zip
+*.app/
 notary-log.json
