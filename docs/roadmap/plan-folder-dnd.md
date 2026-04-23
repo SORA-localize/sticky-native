@@ -7,6 +7,7 @@
 | 2026-04-21 | 初版作成 |
 | 2026-04-21 | レビュー指摘を反映：P-03矛盾修正・ID体系修正・Phase1例外理由追記・reload()確認・Issue→Phase対応表追加 |
 | 2026-04-21 | レビュー指摘2回目を反映：MemoTransferItem定義ファイル明記・ゴミ箱D&D無効化方法追記・All Memos行ドロップ禁止理由追記 |
+| 2026-04-23 | 後続計画 `plan-folder-management-polish.md` により All Memos 行へのD&D禁止判断を限定的に上書き。個別フォルダから未分類へ戻す明示操作として `onAssignFolder(memoID, nil)` を許可する方針を追記 |
 
 ---
 
@@ -93,7 +94,8 @@ Trash      [N]
 - **ドロップ先**：サイドバーの各フォルダ行に `.dropDestination(for: MemoTransferItem.self)` を付与
 - ドロップ時に `onAssignFolder(memoID, folderID)` を呼ぶ
 - Trash 行へのドロップは**受け付けない**（ゴミ箱移動はコンテキストメニューで行う。D&D と混在すると誤操作が生じやすい）
-- All Memos 行へのドロップは**受け付けない**（フォルダ解除は D&D ではなくコンテキストメニューの「Remove from Folder」で行う。どのフォルダビューからでもドロップ先として All Memos が表示されると誤操作が生じやすく、意図が曖昧になるため）
+- All Memos 行へのドロップは本計画時点では**受け付けない**（フォルダ解除は D&D ではなくコンテキストメニューの「Remove from Folder」で行う。どのフォルダビューからでもドロップ先として All Memos が表示されると誤操作が生じやすく、意図が曖昧になるため）
+- ただし、後続計画 `docs/roadmap/plan-folder-management-polish.md` では、個別フォルダから未分類へ戻す明示操作として All Memos 行への drop を限定的に許可する。実装時は Trash 行へのD&Dを引き続き無効化し、All Memos drop は `onAssignFolder(memoID, nil)` のみに限定する。
 
 ```swift
 // 転送型：MemoTransferItem.swift として HomeView.swift と同じファイルグループに新規作成する
