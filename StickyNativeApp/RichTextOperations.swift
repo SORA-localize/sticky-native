@@ -4,7 +4,6 @@ enum RichTextFormattingAction {
   case bold
   case underline
   case strikethrough
-  case highlight
 }
 
 enum RichTextOperations {
@@ -26,8 +25,6 @@ enum RichTextOperations {
       toggleAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, in: targetRange, textStorage: textStorage)
     case .strikethrough:
       toggleAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, in: targetRange, textStorage: textStorage)
-    case .highlight:
-      toggleAttribute(.backgroundColor, value: NSColor.systemYellow.withAlphaComponent(0.32), in: targetRange, textStorage: textStorage)
     }
     textStorage.endEditing()
 
@@ -67,10 +64,6 @@ enum RichTextOperations {
 
     if attributeRuns(for: .strikethroughStyle, in: targetRange, textStorage: textStorage).allSatisfy({ $0.value != nil }) {
       active.insert(.strikethrough)
-    }
-
-    if attributeRuns(for: .backgroundColor, in: targetRange, textStorage: textStorage).allSatisfy({ $0.value != nil }) {
-      active.insert(.highlight)
     }
 
     return active

@@ -60,7 +60,7 @@ private extension RichTextContentCodec {
     var hasAttributes = false
     let fullRange = NSRange(location: 0, length: attributedString.length)
     attributedString.enumerateAttributes(in: fullRange) { attributes, _, stop in
-      if attributes[.strikethroughStyle] != nil || attributes[.backgroundColor] != nil || attributes[.underlineStyle] != nil {
+      if attributes[.strikethroughStyle] != nil || attributes[.underlineStyle] != nil {
         hasAttributes = true
         stop.pointee = true
         return
@@ -84,10 +84,6 @@ private extension RichTextContentCodec {
 
       if let strikethroughStyle = attributes[.strikethroughStyle] {
         sanitized.addAttribute(.strikethroughStyle, value: strikethroughStyle, range: range)
-      }
-
-      if let backgroundColor = attributes[.backgroundColor] {
-        sanitized.addAttribute(.backgroundColor, value: backgroundColor, range: range)
       }
 
       if let underlineStyle = attributes[.underlineStyle] {

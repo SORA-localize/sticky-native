@@ -83,14 +83,13 @@ private enum MarkdownLiteParser {
 }
 
 private enum MarkdownSelectionAction: CaseIterable {
-  case bold, underline, strikethrough, highlight
+  case bold, underline, strikethrough
 
   var symbolName: String {
     switch self {
     case .bold: return "bold"
     case .underline: return "underline"
     case .strikethrough: return "strikethrough"
-    case .highlight: return "highlighter"
     }
   }
 
@@ -99,7 +98,6 @@ private enum MarkdownSelectionAction: CaseIterable {
     case .bold: return "太字"
     case .underline: return "下線"
     case .strikethrough: return "取り消し線"
-    case .highlight: return "ハイライト"
     }
   }
 
@@ -108,13 +106,12 @@ private enum MarkdownSelectionAction: CaseIterable {
     case .bold: return .bold
     case .underline: return .underline
     case .strikethrough: return .strikethrough
-    case .highlight: return .highlight
     }
   }
 }
 
 private final class MarkdownSelectionToolbar: NSView {
-  static let preferredSize = NSSize(width: 120, height: 34)
+  static let preferredSize = NSSize(width: 92, height: 34)
 
   var onAction: ((MarkdownSelectionAction) -> Void)?
   var activeActions: Set<MarkdownSelectionAction> = [] {
@@ -477,10 +474,6 @@ final class CheckboxNSTextView: NSTextView {
 
   private static let completedTaskLineAttributes: [NSAttributedString.Key: Any] = [
     .strikethroughStyle: NSUnderlineStyle.single.rawValue,
-  ]
-
-  private static let highlightAttributes: [NSAttributedString.Key: Any] = [
-    .backgroundColor: NSColor.systemYellow.withAlphaComponent(0.32),
   ]
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
