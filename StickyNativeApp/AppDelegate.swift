@@ -74,13 +74,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 @MainActor
 private final class LaunchWindowController: NSWindowController {
-  private let minimumDisplayDuration: TimeInterval = 0.75
+  private let minimumDisplayDuration: TimeInterval = 1.8
   private let openedAt = Date()
   private var isFinishing = false
 
   init() {
     let panel = NSPanel(
-      contentRect: NSRect(x: 0, y: 0, width: 240, height: 148),
+      contentRect: NSRect(x: 0, y: 0, width: 320, height: 210),
       styleMask: [.borderless, .nonactivatingPanel],
       backing: .buffered,
       defer: false
@@ -106,7 +106,7 @@ private final class LaunchWindowController: NSWindowController {
     window?.alphaValue = 0
     window?.orderFrontRegardless()
     NSAnimationContext.runAnimationGroup { context in
-      context.duration = 0.16
+      context.duration = 0.22
       window?.animator().alphaValue = 1
     }
   }
@@ -124,7 +124,7 @@ private final class LaunchWindowController: NSWindowController {
 
   private func fadeOutAndClose() {
     NSAnimationContext.runAnimationGroup { context in
-      context.duration = 0.18
+      context.duration = 0.24
       window?.animator().alphaValue = 0
     } completionHandler: { [weak self] in
       self?.close()
@@ -136,37 +136,29 @@ private struct LaunchProgressView: View {
   @State private var isPulsing = false
 
   var body: some View {
-    VStack(spacing: 14) {
-      ZStack {
-        Circle()
-          .fill(Color(NSColor.controlAccentColor).opacity(isPulsing ? 0.20 : 0.10))
-          .frame(width: 56, height: 56)
-          .scaleEffect(isPulsing ? 1.08 : 0.94)
+    VStack(spacing: 18) {
+      Image("LaunchMascot")
+        .resizable()
+        .scaledToFit()
+        .frame(width: 92, height: 104)
+        .scaleEffect(isPulsing ? 1.03 : 0.98)
+        .shadow(color: .black.opacity(0.16), radius: 7, y: 3)
 
-        Image(systemName: "note.text")
-          .font(.system(size: 25, weight: .medium))
-          .foregroundStyle(Color(NSColor.controlAccentColor))
-      }
-
-      VStack(spacing: 6) {
+      VStack(spacing: 8) {
         Text("StickyNative")
-          .font(.system(size: 16, weight: .semibold))
+          .font(.system(size: 21, weight: .semibold))
           .foregroundStyle(.primary)
 
-        HStack(spacing: 8) {
-          ProgressView()
-            .controlSize(.small)
-          Text(Str.launching)
-            .font(.system(size: 12))
-            .foregroundStyle(.secondary)
-        }
+        Text(Str.launching)
+          .font(.system(size: 14))
+          .foregroundStyle(.secondary)
       }
     }
-    .frame(width: 240, height: 148)
+    .frame(width: 320, height: 210)
     .background(.regularMaterial)
-    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     .overlay(
-      RoundedRectangle(cornerRadius: 8, style: .continuous)
+      RoundedRectangle(cornerRadius: 10, style: .continuous)
         .stroke(Color.primary.opacity(0.08), lineWidth: 1)
     )
     .onAppear {
