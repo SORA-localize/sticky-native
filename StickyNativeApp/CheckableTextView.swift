@@ -83,7 +83,7 @@ private enum MarkdownLiteParser {
 }
 
 private enum MarkdownSelectionAction: CaseIterable {
-  case bold, italic, strikethrough, highlight, quote
+  case bold, italic, strikethrough, highlight, clearFormatting
 
   var symbolName: String {
     switch self {
@@ -91,7 +91,7 @@ private enum MarkdownSelectionAction: CaseIterable {
     case .italic: return "italic"
     case .strikethrough: return "strikethrough"
     case .highlight: return "highlighter"
-    case .quote: return "quote.bubble"
+    case .clearFormatting: return "eraser"
     }
   }
 
@@ -101,7 +101,17 @@ private enum MarkdownSelectionAction: CaseIterable {
     case .italic: return "斜体"
     case .strikethrough: return "取り消し線"
     case .highlight: return "ハイライト"
-    case .quote: return "引用"
+    case .clearFormatting: return "装飾解除"
+    }
+  }
+
+  var formattingAction: RichTextFormattingAction {
+    switch self {
+    case .bold: return .bold
+    case .italic: return .italic
+    case .strikethrough: return .strikethrough
+    case .highlight: return .highlight
+    case .clearFormatting: return .clearFormatting
     }
   }
 }
@@ -462,10 +472,6 @@ final class CheckboxNSTextView: NSTextView {
     .backgroundColor: NSColor.systemYellow.withAlphaComponent(0.32),
   ]
 
-  private static let quoteLineAttributes: [NSAttributedString.Key: Any] = [
-    .backgroundColor: NSColor.labelColor.withAlphaComponent(0.05),
-  ]
-
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
     true
   }
@@ -709,105 +715,22 @@ final class CheckboxNSTextView: NSTextView {
   }
 
   private func applyMarkdownAction(_ action: MarkdownSelectionAction) {
-    let range = selectedRange()
-    guard range.length > 0, !hasMarkedText() else { return }
-    let editRange: NSRange
-    switch action {
-    case .quote:
-      editRange = (string as NSString).lineRange(for: range)
-    default:
-      editRange = range
-    }
-    guard shouldChangeText(in: editRange, replacementString: nil) else { return }
-    applyRichTextAction(action, range: editRange)
+    guard selectedRange().length > 0, !hasMarkedText() else { return }
+    guard !RichTextOperations.isMultiRangeCharacterAttributeChange(self) else { return }
+    guard let range = RichTextOperations.targetRange(for: self) else { return }
+    guard shouldChangeText(in: range, replacementString: nil) else { return }
+
+    let originalSelection = selectedRange()
+    undoManager?.beginUndoGrouping()
+    RichTextOperations.apply(
+      action: action.formattingAction,
+      to: self,
+      range: range,
+      baseFont: font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    )
+    undoManager?.endUndoGrouping()
     didChangeText()
-    setSelectedRange(range)
-  }
-
-  private func applyRichTextAction(_ action: MarkdownSelectionAction, range: NSRange) {
-    guard let textStorage else { return }
-    textStorage.beginEditing()
-    switch action {
-    case .bold:
-      toggleFontTrait(.boldFontMask, range: range)
-    case .italic:
-      toggleFontTrait(.italicFontMask, range: range)
-    case .strikethrough:
-      toggleAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: range)
-    case .highlight:
-      if let color = Self.highlightAttributes[.backgroundColor] {
-        toggleAttribute(.backgroundColor, value: color, range: range)
-      }
-    case .quote:
-      if let color = Self.quoteLineAttributes[.backgroundColor] {
-        toggleAttribute(.backgroundColor, value: color, range: range)
-      }
-    }
-    textStorage.endEditing()
-  }
-
-  private func toggleFontTrait(_ trait: NSFontTraitMask, range: NSRange) {
-    guard let textStorage else { return }
-    let shouldApply = !entireRange(range, hasFontTrait: trait)
-    let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
-
-    textStorage.enumerateAttribute(.font, in: range) { value, effectiveRange, _ in
-      let currentFont = (value as? NSFont) ?? baseFont
-      var traits = NSFontManager.shared.traits(of: currentFont)
-      if shouldApply {
-        traits.insert(trait)
-      } else {
-        traits.remove(trait)
-      }
-      textStorage.addAttribute(.font, value: font(with: traits, baseFont: baseFont), range: effectiveRange)
-    }
-  }
-
-  private func toggleAttribute(_ key: NSAttributedString.Key, value: Any, range: NSRange) {
-    guard let textStorage else { return }
-    if entireRangeHasAttribute(key, range: range) {
-      textStorage.removeAttribute(key, range: range)
-    } else {
-      textStorage.addAttribute(key, value: value, range: range)
-    }
-  }
-
-  private func entireRange(_ range: NSRange, hasFontTrait trait: NSFontTraitMask) -> Bool {
-    guard range.length > 0 else { return false }
-    var hasTrait = true
-    let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
-    textStorage?.enumerateAttribute(.font, in: range) { value, _, stop in
-      let currentFont = (value as? NSFont) ?? baseFont
-      if !NSFontManager.shared.traits(of: currentFont).contains(trait) {
-        hasTrait = false
-        stop.pointee = true
-      }
-    }
-    return hasTrait
-  }
-
-  private func entireRangeHasAttribute(_ key: NSAttributedString.Key, range: NSRange) -> Bool {
-    guard range.length > 0 else { return false }
-    var hasAttribute = true
-    textStorage?.enumerateAttribute(key, in: range) { value, _, stop in
-      if value == nil {
-        hasAttribute = false
-        stop.pointee = true
-      }
-    }
-    return hasAttribute
-  }
-
-  private func font(with traits: NSFontTraitMask, baseFont: NSFont) -> NSFont {
-    let manager = NSFontManager.shared
-    var font = baseFont
-    if traits.contains(.boldFontMask) {
-      font = manager.convert(font, toHaveTrait: .boldFontMask)
-    }
-    if traits.contains(.italicFontMask) {
-      font = manager.convert(font, toHaveTrait: .italicFontMask)
-    }
-    return font
+    setSelectedRange(originalSelection)
   }
 
   private var shouldShowSelectionToolbar: Bool {

@@ -43,6 +43,7 @@
 		BA0000000000000000000149 /* RichTextContentCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000147 /* RichTextContentCodec.swift */; };
 		BA0000000000000000000150 /* EditorContentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000148 /* EditorContentFactory.swift */; };
 		BA0000000000000000000152 /* EditorContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000151 /* EditorContent.swift */; };
+		BA0000000000000000000154 /* RichTextOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000153 /* RichTextOperations.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +84,7 @@
 		BA0000000000000000000147 /* RichTextContentCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextContentCodec.swift; sourceTree = "<group>"; };
 		BA0000000000000000000148 /* EditorContentFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContentFactory.swift; sourceTree = "<group>"; };
 		BA0000000000000000000151 /* EditorContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContent.swift; sourceTree = "<group>"; };
+		BA0000000000000000000153 /* RichTextOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextOperations.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +125,7 @@
 				BA0000000000000000000147 /* RichTextContentCodec.swift */,
 				BA0000000000000000000148 /* EditorContentFactory.swift */,
 				BA0000000000000000000151 /* EditorContent.swift */,
+				BA0000000000000000000153 /* RichTextOperations.swift */,
 				BA0000000000000000000143 /* MemoTitleFormatter.swift */,
 				BA0000000000000000000012 /* MemoWindowView.swift */,
 				BA0000000000000000000013 /* MemoWindowController.swift */,
@@ -258,6 +261,7 @@
 				BA0000000000000000000149 /* RichTextContentCodec.swift in Sources */,
 				BA0000000000000000000150 /* EditorContentFactory.swift in Sources */,
 				BA0000000000000000000152 /* EditorContent.swift in Sources */,
+				BA0000000000000000000154 /* RichTextOperations.swift in Sources */,
 				BA0000000000000000000142 /* MemoTitleFormatter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
