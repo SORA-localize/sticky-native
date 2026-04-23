@@ -55,7 +55,8 @@ final class SQLiteStore {
         is_trashed INTEGER NOT NULL DEFAULT 0,
         created_at REAL,
         updated_at REAL NOT NULL,
-        content_edited_at REAL NOT NULL DEFAULT 0
+        content_edited_at REAL NOT NULL DEFAULT 0,
+        rich_text_data BLOB
       );
       """
     let sessionSQL = """
@@ -91,6 +92,9 @@ final class SQLiteStore {
     if !existing.contains("content_edited_at") {
       try exec("ALTER TABLE memos ADD COLUMN content_edited_at REAL NOT NULL DEFAULT 0;")
       try exec("UPDATE memos SET content_edited_at = updated_at WHERE content_edited_at = 0;")
+    }
+    if !existing.contains("rich_text_data") {
+      try exec("ALTER TABLE memos ADD COLUMN rich_text_data BLOB;")
     }
 
     // session_id migration: 失敗しても起動継続（degraded 起動）
