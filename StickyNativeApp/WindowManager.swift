@@ -40,10 +40,15 @@ final class WindowManager {
     closedMemoRecords.removeAll { $0.memoID == id }
     guard let persisted = coordinator.fetchMemo(id: id) else { return }
     let savedFrame = frame(from: persisted)
+    let displayContent = EditorContentFactory.makeDisplayContent(
+      draft: persisted.draft,
+      richTextData: persisted.richTextData
+    )
     coordinator.markOpen(id: id)
     let memo = MemoWindow(
       id: id,
       draft: persisted.draft,
+      attributedContent: displayContent.attributedString,
       colorTheme: MemoColorTheme.from(index: persisted.colorIndex)
     )
     let controller = makeController(for: memo, savedFrame: savedFrame, initiallyPinned: persisted.isPinned)
@@ -83,9 +88,14 @@ final class WindowManager {
         continue
       }
       let savedFrame = frame(from: persisted)
+      let displayContent = EditorContentFactory.makeDisplayContent(
+        draft: persisted.draft,
+        richTextData: persisted.richTextData
+      )
       let memo = MemoWindow(
         id: persisted.id,
         draft: persisted.draft,
+        attributedContent: displayContent.attributedString,
         colorTheme: MemoColorTheme.from(index: persisted.colorIndex)
       )
       let controller = makeController(for: memo, savedFrame: savedFrame, initiallyPinned: persisted.isPinned)
@@ -104,7 +114,7 @@ final class WindowManager {
       if MemoWindowController.isDraftEmpty(controller.memo.draft) {
         coordinator.permanentDelete(id: controller.memo.id)
       } else {
-        scheduler.flush(id: controller.memo.id, content: EditorContent(plainText: controller.memo.draft))
+        scheduler.flush(id: controller.memo.id, content: EditorContent(attributedString: controller.memo.attributedContent))
         coordinator.saveWindowState(id: controller.memo.id, frame: controller.currentFrame, isOpen: true)
       }
     }
@@ -126,6 +136,10 @@ final class WindowManager {
 
     let persisted = coordinator.fetchMemo(id: record.memoID)
     let draft = persisted?.draft ?? ""
+    let displayContent = EditorContentFactory.makeDisplayContent(
+      draft: draft,
+      richTextData: persisted?.richTextData
+    )
     let savedFrame = record.frame ?? persisted.flatMap { frame(from: $0) }
     let contentSize = savedFrame == nil ? Self.defaultContentSize(from: appSettings) : nil
     let isPinned = persisted?.isPinned ?? false
@@ -134,6 +148,7 @@ final class WindowManager {
     let memo = MemoWindow(
       id: record.memoID,
       draft: draft,
+      attributedContent: displayContent.attributedString,
       colorTheme: MemoColorTheme.from(index: persisted?.colorIndex ?? MemoColorTheme.fallback.colorIndex)
     )
     let controller = makeController(for: memo, contentSize: contentSize, savedFrame: savedFrame, initiallyPinned: isPinned)

@@ -17,7 +17,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   private let uiState: MemoWindowUIState
   private let appSettings: AppSettings
   private var hostingView: NSView?
-  private var draftCancellable: AnyCancellable?
+  private var contentCancellable: AnyCancellable?
   private var didExplicitFlush = false
 
   init(
@@ -83,10 +83,10 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     applyPinState()
 
-    draftCancellable = memo.$draft
+    contentCancellable = memo.$attributedContent
       .dropFirst()
-      .sink { draft in
-        onDraftChange(memo.id, EditorContent(plainText: draft))
+      .sink { attributedContent in
+        onDraftChange(memo.id, EditorContent(attributedString: attributedContent))
       }
   }
 
@@ -171,7 +171,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   private var currentContent: EditorContent {
-    EditorContent(plainText: memo.draft)
+    EditorContent(attributedString: memo.attributedContent)
   }
 
   private func requestEditorFocus() {

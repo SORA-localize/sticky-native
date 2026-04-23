@@ -33,6 +33,13 @@ enum RichTextContentCodec {
     }
     return sanitizedAttributedString(from: decoded, baseFont: baseFont).attributedString
   }
+
+  static func normalizedAttributedString(
+    from attributedString: NSAttributedString,
+    baseFont: NSFont = defaultBaseFont
+  ) -> NSAttributedString {
+    sanitizedAttributedString(from: attributedString, baseFont: baseFont).attributedString
+  }
 }
 
 private extension RichTextContentCodec {

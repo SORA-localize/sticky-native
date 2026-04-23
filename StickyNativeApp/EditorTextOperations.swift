@@ -81,37 +81,6 @@ enum EditorTextOperations {
     return prefix + "☐ " + String(body)
   }
 
-  static func wrapSelection(in text: String, selectedRange: NSRange, prefix: String, suffix: String) -> EditorTextEdit? {
-    guard selectedRange.length > 0 else { return nil }
-    let nsText = text as NSString
-    guard NSMaxRange(selectedRange) <= nsText.length else { return nil }
-    let selectedText = nsText.substring(with: selectedRange)
-    let replacement = prefix + selectedText + suffix
-    return EditorTextEdit(
-      range: selectedRange,
-      replacement: replacement,
-      selectedRange: NSRange(location: selectedRange.location, length: (replacement as NSString).length)
-    )
-  }
-
-  static func prefixLines(in text: String, selectedRange: NSRange, linePrefix: String) -> EditorTextEdit? {
-    guard selectedRange.length > 0 else { return nil }
-    let nsText = text as NSString
-    guard NSMaxRange(selectedRange) <= nsText.length else { return nil }
-    let lineRange = nsText.lineRange(for: selectedRange)
-    let lineText = nsText.substring(with: lineRange)
-    let lines = lineText.components(separatedBy: "\n")
-    let replacement = lines.enumerated().map { index, line in
-      (index == lines.count - 1 && line.isEmpty) ? line : linePrefix + line
-    }.joined(separator: "\n")
-    guard replacement != lineText else { return nil }
-    return EditorTextEdit(
-      range: lineRange,
-      replacement: replacement,
-      selectedRange: NSRange(location: lineRange.location, length: (replacement as NSString).length)
-    )
-  }
-
   private static func formattedDate(_ date: Date, format: String) -> String {
     let formatter = DateFormatter()
     formatter.calendar = Calendar(identifier: .gregorian)

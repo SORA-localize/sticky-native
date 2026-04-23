@@ -9,7 +9,10 @@ struct MemoEditorView: View {
 
   var body: some View {
     CheckableTextView(
-      text: $memo.draft,
+      attributedText: Binding(
+        get: { memo.attributedContent },
+        set: { memo.updateAttributedContent($0) }
+      ),
       focusToken: uiState.focusToken,
       fontSize: appSettings.editorFontSize,
       onFocusChange: { isEditorFocused = $0 }

@@ -27,12 +27,6 @@ private final class SmartLinkDetector {
 }
 
 private enum MarkdownLiteParser {
-  // Compiled once per app lifetime
-  private static let boldRegex = try? NSRegularExpression(pattern: #"\*\*[^*\n]+?\*\*"#)
-  private static let italicRegex = try? NSRegularExpression(pattern: #"(?<!\*)\*[^*\n]+?\*(?!\*)"#)
-  private static let inlineStrikethroughRegex = try? NSRegularExpression(pattern: #"~~[^\n]+?~~"#)
-  private static let highlightRegex = try? NSRegularExpression(pattern: #"==[^\n]+?=="#)
-
   static func completedTaskLineDecorations(in text: String) -> [MarkdownLiteDecoration] {
     let nsText = text as NSString
     var decorations: [MarkdownLiteDecoration] = []
@@ -51,48 +45,6 @@ private enum MarkdownLiteParser {
     }
 
     return decorations
-  }
-
-  static func boldRanges(in text: String) -> [NSRange] {
-    matchRanges(boldRegex, in: text)
-  }
-
-  static func italicRanges(in text: String) -> [NSRange] {
-    matchRanges(italicRegex, in: text)
-  }
-
-  static func inlineStrikethroughRanges(in text: String) -> [NSRange] {
-    matchRanges(inlineStrikethroughRegex, in: text)
-  }
-
-  static func highlightRanges(in text: String) -> [NSRange] {
-    matchRanges(highlightRegex, in: text)
-  }
-
-  static func quoteLineRanges(in text: String) -> [NSRange] {
-    let nsText = text as NSString
-    var ranges: [NSRange] = []
-    var location = 0
-    while location < nsText.length {
-      let lineRange = nsText.lineRange(for: NSRange(location: location, length: 0))
-      let visibleRange = visibleLineRange(from: lineRange, in: nsText)
-      if visibleRange.length >= 2 {
-        let prefix = nsText.substring(with: NSRange(location: visibleRange.location, length: 2))
-        if prefix == "> " {
-          ranges.append(visibleRange)
-        }
-      }
-      let nextLocation = NSMaxRange(lineRange)
-      guard nextLocation > location else { break }
-      location = nextLocation
-    }
-    return ranges
-  }
-
-  private static func matchRanges(_ regex: NSRegularExpression?, in text: String) -> [NSRange] {
-    guard let regex else { return [] }
-    let nsRange = NSRange(text.startIndex..., in: text)
-    return regex.matches(in: text, range: nsRange).map { $0.range }
   }
 
   private static func visibleLineRange(from lineRange: NSRange, in text: NSString) -> NSRange {
@@ -150,21 +102,6 @@ private enum MarkdownSelectionAction: CaseIterable {
     case .strikethrough: return "取り消し線"
     case .highlight: return "ハイライト"
     case .quote: return "引用"
-    }
-  }
-
-  func apply(to text: String, selectedRange: NSRange) -> EditorTextEdit? {
-    switch self {
-    case .bold:
-      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "**", suffix: "**")
-    case .italic:
-      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "*", suffix: "*")
-    case .strikethrough:
-      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "~~", suffix: "~~")
-    case .highlight:
-      return EditorTextOperations.wrapSelection(in: text, selectedRange: selectedRange, prefix: "==", suffix: "==")
-    case .quote:
-      return EditorTextOperations.prefixLines(in: text, selectedRange: selectedRange, linePrefix: "> ")
     }
   }
 }
@@ -275,15 +212,15 @@ private final class MarkdownSelectionToolbar: NSView {
   private func flashPressed(_ button: NSButton) {
     button.contentTintColor = .labelColor
     button.layer?.backgroundColor = NSColor.labelColor.withAlphaComponent(0.16).cgColor
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self, weak button] in
-      guard let self, let button else { return }
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+      guard let self else { return }
       self.updateButtonAppearances()
     }
   }
 }
 
 struct CheckableTextView: NSViewRepresentable {
-  @Binding var text: String
+  @Binding var attributedText: NSAttributedString
   let focusToken: UUID
   let fontSize: Double
   let onFocusChange: (Bool) -> Void
@@ -301,7 +238,7 @@ struct CheckableTextView: NSViewRepresentable {
     scrollView.contentView.postsBoundsChangedNotifications = true
 
     let textView = CheckboxNSTextView()
-    textView.string = text
+    textView.setAttributedContent(attributedText)
     textView.delegate = context.coordinator
     textView.onPerformCommand = { [weak coordinator = context.coordinator] command, textView in
       coordinator?.perform(command, in: textView)
@@ -328,10 +265,10 @@ struct CheckableTextView: NSViewRepresentable {
     context.coordinator.observeBounds(of: scrollView)
     applyDynamicConfiguration(scrollView: scrollView, textView: textView, coordinator: context.coordinator)
 
-    if !textView.hasMarkedText(), textView.string != text {
+    if !textView.hasMarkedText(), !textView.attributedString().isEqual(to: attributedText) {
       let selectedRange = textView.selectedRange()
-      textView.string = text
-      textView.setSelectedRange(clampedRange(selectedRange, in: text))
+      textView.setAttributedContent(attributedText)
+      textView.setSelectedRange(clampedRange(selectedRange, in: attributedText.string))
     }
     context.coordinator.refreshEditorDecorations(in: textView)
 
@@ -344,7 +281,7 @@ struct CheckableTextView: NSViewRepresentable {
   }
 
   private func configureInitialTextView(_ textView: CheckboxNSTextView) {
-    textView.isRichText = false
+    textView.isRichText = true
     textView.isAutomaticQuoteSubstitutionEnabled = false
     textView.isAutomaticDashSubstitutionEnabled = false
     textView.isAutomaticTextReplacementEnabled = false
@@ -368,7 +305,10 @@ struct CheckableTextView: NSViewRepresentable {
     coordinator: Coordinator
   ) {
     if coordinator.appliedFontSize != fontSize {
-      textView.font = .systemFont(ofSize: fontSize)
+      let baseFont = NSFont.systemFont(ofSize: fontSize)
+      textView.font = baseFont
+      textView.typingAttributes[.font] = baseFont
+      textView.normalizePersistedAttributes(baseFont: baseFont)
       coordinator.appliedFontSize = fontSize
       textView.refreshSmartLinkHoverFromLastMouseLocation()
     }
@@ -441,7 +381,7 @@ struct CheckableTextView: NSViewRepresentable {
 
     func textDidChange(_ notification: Notification) {
       guard let textView = notification.object as? CheckboxNSTextView else { return }
-      parent.text = textView.string
+      parent.attributedText = textView.currentAttributedContent
       refreshEditorDecorations(in: textView)
       textView.refreshSelectionToolbar()
     }
@@ -512,8 +452,6 @@ final class CheckboxNSTextView: NSTextView {
 
   private static let markdownLiteAttributeKeys: [NSAttributedString.Key] = [
     .strikethroughStyle,
-    .font,
-    .backgroundColor,
   ]
 
   private static let completedTaskLineAttributes: [NSAttributedString.Key: Any] = [
@@ -674,6 +612,28 @@ final class CheckboxNSTextView: NSTextView {
     super.otherMouseDown(with: event)
   }
 
+  var currentAttributedContent: NSAttributedString {
+    attributedString().copy() as? NSAttributedString ?? NSAttributedString(string: string)
+  }
+
+  func setAttributedContent(_ content: NSAttributedString) {
+    textStorage?.setAttributedString(content)
+  }
+
+  func normalizePersistedAttributes(baseFont: NSFont) {
+    let normalized = RichTextContentCodec.normalizedAttributedString(
+      from: currentAttributedContent,
+      baseFont: baseFont
+    )
+    guard !attributedString().isEqual(to: normalized) else { return }
+    let selectedRange = selectedRange()
+    textStorage?.setAttributedString(normalized)
+    setSelectedRange(NSRange(
+      location: min(selectedRange.location, normalized.length),
+      length: min(selectedRange.length, max(0, normalized.length - selectedRange.location))
+    ))
+  }
+
   fileprivate func refreshSmartLinks(using detector: SmartLinkDetector) {
     detectedLinks = detector.links(in: string)
     refreshSmartLinkHoverFromLastMouseLocation()
@@ -694,26 +654,6 @@ final class CheckboxNSTextView: NSTextView {
       layoutManager.addTemporaryAttributes(Self.completedTaskLineAttributes, forCharacterRange: decoration.range)
     }
 
-    // Inline decorations — font variants derived from current editor font
-    let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
-    let boldFont = NSFont.systemFont(ofSize: baseFont.pointSize, weight: .bold)
-    let italicFont = NSFontManager.shared.convert(baseFont, toHaveTrait: .italicFontMask)
-
-    for range in MarkdownLiteParser.boldRanges(in: string) where NSMaxRange(range) <= textLength {
-      layoutManager.addTemporaryAttributes([.font: boldFont], forCharacterRange: range)
-    }
-    for range in MarkdownLiteParser.italicRanges(in: string) where NSMaxRange(range) <= textLength {
-      layoutManager.addTemporaryAttributes([.font: italicFont], forCharacterRange: range)
-    }
-    for range in MarkdownLiteParser.inlineStrikethroughRanges(in: string) where NSMaxRange(range) <= textLength {
-      layoutManager.addTemporaryAttributes(Self.completedTaskLineAttributes, forCharacterRange: range)
-    }
-    for range in MarkdownLiteParser.highlightRanges(in: string) where NSMaxRange(range) <= textLength {
-      layoutManager.addTemporaryAttributes(Self.highlightAttributes, forCharacterRange: range)
-    }
-    for range in MarkdownLiteParser.quoteLineRanges(in: string) where NSMaxRange(range) <= textLength {
-      layoutManager.addTemporaryAttributes(Self.quoteLineAttributes, forCharacterRange: range)
-    }
   }
 
   fileprivate func refreshSelectionToolbar() {
@@ -771,11 +711,103 @@ final class CheckboxNSTextView: NSTextView {
   private func applyMarkdownAction(_ action: MarkdownSelectionAction) {
     let range = selectedRange()
     guard range.length > 0, !hasMarkedText() else { return }
-    guard let edit = action.apply(to: string, selectedRange: range) else { return }
-    guard shouldChangeText(in: edit.range, replacementString: edit.replacement) else { return }
-    textStorage?.replaceCharacters(in: edit.range, with: edit.replacement)
+    let editRange: NSRange
+    switch action {
+    case .quote:
+      editRange = (string as NSString).lineRange(for: range)
+    default:
+      editRange = range
+    }
+    guard shouldChangeText(in: editRange, replacementString: nil) else { return }
+    applyRichTextAction(action, range: editRange)
     didChangeText()
-    setSelectedRange(edit.selectedRange)
+    setSelectedRange(range)
+  }
+
+  private func applyRichTextAction(_ action: MarkdownSelectionAction, range: NSRange) {
+    guard let textStorage else { return }
+    textStorage.beginEditing()
+    switch action {
+    case .bold:
+      toggleFontTrait(.boldFontMask, range: range)
+    case .italic:
+      toggleFontTrait(.italicFontMask, range: range)
+    case .strikethrough:
+      toggleAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+    case .highlight:
+      if let color = Self.highlightAttributes[.backgroundColor] {
+        toggleAttribute(.backgroundColor, value: color, range: range)
+      }
+    case .quote:
+      if let color = Self.quoteLineAttributes[.backgroundColor] {
+        toggleAttribute(.backgroundColor, value: color, range: range)
+      }
+    }
+    textStorage.endEditing()
+  }
+
+  private func toggleFontTrait(_ trait: NSFontTraitMask, range: NSRange) {
+    guard let textStorage else { return }
+    let shouldApply = !entireRange(range, hasFontTrait: trait)
+    let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+
+    textStorage.enumerateAttribute(.font, in: range) { value, effectiveRange, _ in
+      let currentFont = (value as? NSFont) ?? baseFont
+      var traits = NSFontManager.shared.traits(of: currentFont)
+      if shouldApply {
+        traits.insert(trait)
+      } else {
+        traits.remove(trait)
+      }
+      textStorage.addAttribute(.font, value: font(with: traits, baseFont: baseFont), range: effectiveRange)
+    }
+  }
+
+  private func toggleAttribute(_ key: NSAttributedString.Key, value: Any, range: NSRange) {
+    guard let textStorage else { return }
+    if entireRangeHasAttribute(key, range: range) {
+      textStorage.removeAttribute(key, range: range)
+    } else {
+      textStorage.addAttribute(key, value: value, range: range)
+    }
+  }
+
+  private func entireRange(_ range: NSRange, hasFontTrait trait: NSFontTraitMask) -> Bool {
+    guard range.length > 0 else { return false }
+    var hasTrait = true
+    let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+    textStorage?.enumerateAttribute(.font, in: range) { value, _, stop in
+      let currentFont = (value as? NSFont) ?? baseFont
+      if !NSFontManager.shared.traits(of: currentFont).contains(trait) {
+        hasTrait = false
+        stop.pointee = true
+      }
+    }
+    return hasTrait
+  }
+
+  private func entireRangeHasAttribute(_ key: NSAttributedString.Key, range: NSRange) -> Bool {
+    guard range.length > 0 else { return false }
+    var hasAttribute = true
+    textStorage?.enumerateAttribute(key, in: range) { value, _, stop in
+      if value == nil {
+        hasAttribute = false
+        stop.pointee = true
+      }
+    }
+    return hasAttribute
+  }
+
+  private func font(with traits: NSFontTraitMask, baseFont: NSFont) -> NSFont {
+    let manager = NSFontManager.shared
+    var font = baseFont
+    if traits.contains(.boldFontMask) {
+      font = manager.convert(font, toHaveTrait: .boldFontMask)
+    }
+    if traits.contains(.italicFontMask) {
+      font = manager.convert(font, toHaveTrait: .italicFontMask)
+    }
+    return font
   }
 
   private var shouldShowSelectionToolbar: Bool {
