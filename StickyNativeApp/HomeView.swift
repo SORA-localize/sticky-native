@@ -21,6 +21,9 @@ struct HomeView: View {
 
   @State private var isFolderManagerPresented = false
   @State private var isSidebarVisible = true
+  @State private var pendingDeleteFolder: Folder?
+  @State private var editingSidebarFolderID: UUID?
+  @State private var editingSidebarFolderName = ""
 
   var body: some View {
     HStack(spacing: 0) {
@@ -36,8 +39,24 @@ struct HomeView: View {
         folders: viewModel.folders,
         onCreate: onCreateFolder,
         onRename: onRenameFolder,
-        onDelete: onDeleteFolder
+        onDeleteConfirmed: onDeleteFolder
       )
+    }
+    .alert(
+      Str.deleteFolderAlertTitle,
+      isPresented: Binding(
+        get: { pendingDeleteFolder != nil },
+        set: { if !$0 { pendingDeleteFolder = nil } }
+      )
+    ) {
+      Button(Str.delete, role: .destructive) {
+        confirmSidebarFolderDelete()
+      }
+      Button(Str.trashAlertCancel, role: .cancel) {
+        pendingDeleteFolder = nil
+      }
+    } message: {
+      Text(Str.deleteFolderAlertMessage)
     }
   }
 
@@ -92,7 +111,7 @@ struct HomeView: View {
         Button {
           isFolderManagerPresented = true
         } label: {
-          Label(Str.newFolder, systemImage: "folder.badge.plus")
+          Label(Str.folderManagement, systemImage: "folder.badge.plus")
             .font(.system(size: 12))
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
@@ -115,19 +134,31 @@ struct HomeView: View {
       count: count,
       isSelected: viewModel.selectedScope == scope,
       onSelect: { viewModel.selectedScope = scope },
-      onDrop: nil
+      onDrop: scope == .all ? { memoID in
+        moveMemoToAllMemosIfNeeded(memoID: memoID)
+      } : nil
     )
   }
 
   private func folderSidebarRow(folder: Folder) -> some View {
-    SidebarRowView(
-      scope: .folder(folder.id),
-      title: folder.name,
-      icon: "folder",
+    FolderSidebarRowView(
+      folder: folder,
       count: viewModel.folderCount(id: folder.id),
       isSelected: viewModel.selectedScope == .folder(folder.id),
-      onSelect: { viewModel.selectedScope = .folder(folder.id) },
-      onDrop: { memoID in onAssignFolder(memoID, folder.id) }
+      isEditing: editingSidebarFolderID == folder.id,
+      editingName: editingSidebarFolderName,
+      onSelect: {
+        guard editingSidebarFolderID == nil else { return }
+        viewModel.selectedScope = .folder(folder.id)
+      },
+      onBeginEditing: { beginSidebarRename(folder: folder) },
+      onEditingNameChange: { editingSidebarFolderName = $0 },
+      onCommitEditing: { commitSidebarRename() },
+      onRequestDelete: { pendingDeleteFolder = $0 },
+      onDrop: { memoID in
+        onAssignFolder(memoID, folder.id)
+        return true
+      }
     )
   }
 
@@ -239,6 +270,38 @@ struct HomeView: View {
 
   private var memoCount: Int {
     viewModel.sections.reduce(0) { $0 + $1.memos.count }
+  }
+
+  private func beginSidebarRename(folder: Folder) {
+    editingSidebarFolderID = folder.id
+    editingSidebarFolderName = folder.name
+  }
+
+  private func commitSidebarRename() {
+    guard let id = editingSidebarFolderID else { return }
+    let edited = editingSidebarFolderName
+    editingSidebarFolderID = nil
+    editingSidebarFolderName = ""
+
+    guard let folder = viewModel.folders.first(where: { $0.id == id }) else { return }
+    let trimmed = edited.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty, trimmed != folder.name else { return }
+    onRenameFolder(id, trimmed)
+  }
+
+  private func confirmSidebarFolderDelete() {
+    guard let folder = pendingDeleteFolder else { return }
+    pendingDeleteFolder = nil
+    onDeleteFolder(folder.id)
+  }
+
+  private func moveMemoToAllMemosIfNeeded(memoID: UUID) -> Bool {
+    guard let memo = viewModel.memos.first(where: { $0.id == memoID }),
+          memo.sessionID != nil else {
+      return false
+    }
+    onAssignFolder(memoID, nil)
+    return true
   }
 }
 
@@ -413,7 +476,7 @@ private struct SidebarRowView: View {
   let count: Int
   let isSelected: Bool
   let onSelect: () -> Void
-  let onDrop: ((UUID) -> Void)?
+  let onDrop: ((UUID) -> Bool)?
 
   @State private var isDropTargeted = false
 
@@ -446,11 +509,108 @@ private struct SidebarRowView: View {
     .if(onDrop != nil) { view in
       view.dropDestination(for: MemoTransferItem.self) { items, _ in
         guard let item = items.first else { return false }
-        onDrop?(item.id)
-        return true
+        return onDrop?(item.id) ?? false
       } isTargeted: { targeted in
         isDropTargeted = targeted
       }
+    }
+  }
+}
+
+private struct FolderSidebarRowView: View {
+  let folder: Folder
+  let count: Int
+  let isSelected: Bool
+  let isEditing: Bool
+  let editingName: String
+  let onSelect: () -> Void
+  let onBeginEditing: () -> Void
+  let onEditingNameChange: (String) -> Void
+  let onCommitEditing: () -> Void
+  let onRequestDelete: (Folder) -> Void
+  let onDrop: (UUID) -> Bool
+
+  @FocusState private var isNameFieldFocused: Bool
+  @State private var isDropTargeted = false
+
+  var body: some View {
+    HStack(spacing: 8) {
+      Image(systemName: "folder")
+        .font(.system(size: 12))
+        .frame(width: 16)
+
+      nameContent
+
+      Spacer(minLength: 0)
+
+      if count > 0 {
+        Text("\(count)")
+          .font(.system(size: 11))
+          .foregroundStyle(.tertiary)
+      }
+    }
+    .padding(.horizontal, 8)
+    .padding(.vertical, 5)
+    .frame(maxWidth: .infinity, minHeight: 28, alignment: .leading)
+    .contentShape(Rectangle())
+    .background((isSelected || isDropTargeted) ? Color.accentColor.opacity(0.18) : Color.clear)
+    .clipShape(RoundedRectangle(cornerRadius: 6))
+    .foregroundStyle(isSelected ? .primary : .secondary)
+    .onTapGesture {
+      if !isEditing {
+        onSelect()
+      }
+    }
+    .contextMenu {
+      Button(Str.delete, role: .destructive) {
+        onRequestDelete(folder)
+      }
+    }
+    .dropDestination(for: MemoTransferItem.self) { items, _ in
+      guard let item = items.first else { return false }
+      return onDrop(item.id)
+    } isTargeted: { targeted in
+      isDropTargeted = targeted
+    }
+    .onChange(of: isEditing) { _, editing in
+      if editing {
+        DispatchQueue.main.async {
+          isNameFieldFocused = true
+        }
+      }
+    }
+    .onAppear {
+      if isEditing {
+        DispatchQueue.main.async {
+          isNameFieldFocused = true
+        }
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var nameContent: some View {
+    if isEditing {
+      TextField("", text: Binding(
+        get: { editingName },
+        set: onEditingNameChange
+      ))
+      .textFieldStyle(.plain)
+      .font(.system(size: 12))
+      .focused($isNameFieldFocused)
+      .onSubmit { onCommitEditing() }
+      .onChange(of: isNameFieldFocused) { _, focused in
+        if !focused {
+          onCommitEditing()
+        }
+      }
+    } else {
+      Text(folder.name)
+        .font(.system(size: 12))
+        .lineLimit(1)
+        .onTapGesture(count: 2) {
+          onBeginEditing()
+        }
     }
   }
 }
@@ -461,11 +621,12 @@ private struct FolderManagerView: View {
   let folders: [Folder]
   let onCreate: (String) -> Void
   let onRename: (UUID, String) -> Void
-  let onDelete: (UUID) -> Void
+  let onDeleteConfirmed: (UUID) -> Void
 
   @Environment(\.dismiss) private var dismiss
   @State private var newFolderName = ""
   @State private var editingNames: [UUID: String] = [:]
+  @State private var pendingDeleteFolderInSheet: Folder?
 
   var body: some View {
     VStack(spacing: 0) {
@@ -499,7 +660,7 @@ private struct FolderManagerView: View {
             Spacer()
 
             Button {
-              onDelete(folder.id)
+              pendingDeleteFolderInSheet = folder
             } label: {
               Image(systemName: "trash")
                 .font(.system(size: 11))
@@ -525,6 +686,22 @@ private struct FolderManagerView: View {
       .listStyle(.plain)
     }
     .frame(width: 320, height: 360)
+    .alert(
+      Str.deleteFolderAlertTitle,
+      isPresented: Binding(
+        get: { pendingDeleteFolderInSheet != nil },
+        set: { if !$0 { pendingDeleteFolderInSheet = nil } }
+      )
+    ) {
+      Button(Str.delete, role: .destructive) {
+        confirmDelete()
+      }
+      Button(Str.trashAlertCancel, role: .cancel) {
+        pendingDeleteFolderInSheet = nil
+      }
+    } message: {
+      Text(Str.deleteFolderAlertMessage)
+    }
   }
 
   private func commitRename(for folder: Folder) {
@@ -542,5 +719,11 @@ private struct FolderManagerView: View {
     guard !trimmed.isEmpty else { return }
     onCreate(trimmed)
     newFolderName = ""
+  }
+
+  private func confirmDelete() {
+    guard let folder = pendingDeleteFolderInSheet else { return }
+    pendingDeleteFolderInSheet = nil
+    onDeleteConfirmed(folder.id)
   }
 }

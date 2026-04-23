@@ -33,6 +33,7 @@ struct Str {
   static var allMemos:            String { isJa ? "すべてのメモ"              : "All Memos" }
   static var trash:               String { isJa ? "ゴミ箱"                  : "Trash" }
   static var newFolder:           String { isJa ? "新規フォルダ"              : "New Folder" }
+  static var folderManagement:    String { isJa ? "フォルダ管理"              : "Manage Folders" }
   static var folders:             String { isJa ? "フォルダ"                 : "Folders" }
   static var hideSidebar:         String { isJa ? "サイドバーを隠す"           : "Hide Sidebar" }
   static var showSidebar:         String { isJa ? "サイドバーを表示"           : "Show Sidebar" }
@@ -48,6 +49,13 @@ struct Str {
 
   // MARK: - Home: Folder Manager
   static var done:                String { isJa ? "完了"                    : "Done" }
+  static var delete:              String { isJa ? "削除"                    : "Delete" }
+  static var deleteFolderAlertTitle: String {
+    isJa ? "このフォルダを削除しますか？" : "Delete this folder?"
+  }
+  static var deleteFolderAlertMessage: String {
+    isJa ? "中のメモはすべてのメモに移動します。" : "Memos in this folder will move to All Memos."
+  }
 
   // MARK: - Home: Context menu
   static var restore:             String { isJa ? "元に戻す"                 : "Restore" }
