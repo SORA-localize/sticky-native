@@ -5,7 +5,7 @@ enum AppLanguage: String {
 
   static func defaultLanguage() -> AppLanguage {
     guard let saved = UserDefaults.standard.string(forKey: "appLanguage") else {
-      return .japanese
+      return .english
     }
     return AppLanguage(rawValue: saved) ?? .english
   }
