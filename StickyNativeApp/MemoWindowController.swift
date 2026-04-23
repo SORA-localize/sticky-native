@@ -10,8 +10,8 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   let memo: MemoWindow
 
   private let onClose: (ClosedMemoRecord) -> Void
-  private let onDraftChange: (UUID, String) -> Void
-  private let onFlush: (UUID, String) -> Void
+  private let onDraftChange: (UUID, EditorContent) -> Void
+  private let onFlush: (UUID, EditorContent) -> Void
   private let onPinChange: (UUID, Bool) -> Void
   private let onTrash: (UUID) -> Void
   private let uiState: MemoWindowUIState
@@ -27,8 +27,8 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     savedFrame: NSRect? = nil,
     initiallyPinned: Bool = false,
     appSettings: AppSettings,
-    onDraftChange: @escaping (UUID, String) -> Void,
-    onFlush: @escaping (UUID, String) -> Void,
+    onDraftChange: @escaping (UUID, EditorContent) -> Void,
+    onFlush: @escaping (UUID, EditorContent) -> Void,
     onPinChange: @escaping (UUID, Bool) -> Void,
     onTrash: @escaping (UUID) -> Void,
     onClose: @escaping (ClosedMemoRecord) -> Void
@@ -86,7 +86,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     draftCancellable = memo.$draft
       .dropFirst()
       .sink { draft in
-        onDraftChange(memo.id, draft)
+        onDraftChange(memo.id, EditorContent(plainText: draft))
       }
   }
 
@@ -116,7 +116,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       onClose(ClosedMemoRecord(memoID: memo.id, frame: nil, isAutoDelete: true))
     } else {
       if !didExplicitFlush {
-        onFlush(memo.id, memo.draft)
+        onFlush(memo.id, currentContent)
       }
       onClose(ClosedMemoRecord(memoID: memo.id, frame: window?.frame))
     }
@@ -147,13 +147,13 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       },
       onSave: { [weak self] in
         guard let self else { return }
-        onFlush(memo.id, memo.draft)
+        onFlush(memo.id, currentContent)
       },
       onSaveAndClose: { [weak self] in
         guard let self else { return }
         if !Self.isDraftEmpty(memo.draft) {
           didExplicitFlush = true
-          onFlush(memo.id, memo.draft)
+          onFlush(memo.id, currentContent)
         }
         window?.close()
       }
@@ -168,6 +168,10 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       window?.level = .normal
       window?.collectionBehavior = .managed
     }
+  }
+
+  private var currentContent: EditorContent {
+    EditorContent(plainText: memo.draft)
   }
 
   private func requestEditorFocus() {

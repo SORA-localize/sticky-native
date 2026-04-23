@@ -15,8 +15,8 @@ final class WindowManager {
 
   private let coordinator: PersistenceCoordinator
   private let appSettings: AppSettings
-  private lazy var scheduler = AutosaveScheduler { [weak self] id, draft in
-    self?.persistDraft(id: id, draft: draft)
+  private lazy var scheduler = AutosaveScheduler { [weak self] id, content in
+    self?.persistContent(id: id, content: content)
   }
 
   var onClosedStackChanged: (() -> Void)?
@@ -104,7 +104,7 @@ final class WindowManager {
       if MemoWindowController.isDraftEmpty(controller.memo.draft) {
         coordinator.permanentDelete(id: controller.memo.id)
       } else {
-        scheduler.flush(id: controller.memo.id, draft: controller.memo.draft)
+        scheduler.flush(id: controller.memo.id, content: EditorContent(plainText: controller.memo.draft))
         coordinator.saveWindowState(id: controller.memo.id, frame: controller.currentFrame, isOpen: true)
       }
     }
@@ -159,11 +159,11 @@ final class WindowManager {
       savedFrame: savedFrame,
       initiallyPinned: initiallyPinned,
       appSettings: appSettings,
-      onDraftChange: { [weak self] id, draft in
-        self?.scheduler.schedule(id: id, draft: draft)
+      onDraftChange: { [weak self] id, content in
+        self?.scheduler.schedule(id: id, content: content)
       },
-      onFlush: { [weak self] id, draft in
-        self?.scheduler.flush(id: id, draft: draft)
+      onFlush: { [weak self] id, content in
+        self?.scheduler.flush(id: id, content: content)
       },
       onPinChange: { [weak self] id, isPinned in
         self?.coordinator.savePinned(id: id, isPinned: isPinned)
@@ -230,11 +230,11 @@ final class WindowManager {
     )
   }
 
-  private func persistDraft(id: UUID, draft: String) {
+  private func persistContent(id: UUID, content: EditorContent) {
     let colorIndex = openControllers[id]?.memo.colorTheme.colorIndex
       ?? coordinator.fetchMemo(id: id)?.colorIndex
       ?? MemoColorTheme.fallback.colorIndex
-    coordinator.saveDraft(id: id, draft: draft, colorIndex: colorIndex)
+    coordinator.saveMemoContent(id: id, content: content, colorIndex: colorIndex)
   }
 
   private static func defaultContentSize(from appSettings: AppSettings) -> NSSize {
