@@ -40,6 +40,8 @@
 		BA0000000000000000000138 /* EditorCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000139 /* EditorCommand.swift */; };
 		BA0000000000000000000140 /* EditorTextOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000141 /* EditorTextOperations.swift */; };
 		BA0000000000000000000142 /* MemoTitleFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000143 /* MemoTitleFormatter.swift */; };
+		BA0000000000000000000149 /* RichTextContentCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000147 /* RichTextContentCodec.swift */; };
+		BA0000000000000000000150 /* EditorContentFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA0000000000000000000148 /* EditorContentFactory.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -77,6 +79,8 @@
 		BA0000000000000000000139 /* EditorCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorCommand.swift; sourceTree = "<group>"; };
 		BA0000000000000000000141 /* EditorTextOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorTextOperations.swift; sourceTree = "<group>"; };
 		BA0000000000000000000143 /* MemoTitleFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoTitleFormatter.swift; sourceTree = "<group>"; };
+		BA0000000000000000000147 /* RichTextContentCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextContentCodec.swift; sourceTree = "<group>"; };
+		BA0000000000000000000148 /* EditorContentFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorContentFactory.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,6 +118,8 @@
 				BA0000000000000000000137 /* CheckableTextView.swift */,
 				BA0000000000000000000139 /* EditorCommand.swift */,
 				BA0000000000000000000141 /* EditorTextOperations.swift */,
+				BA0000000000000000000147 /* RichTextContentCodec.swift */,
+				BA0000000000000000000148 /* EditorContentFactory.swift */,
 				BA0000000000000000000143 /* MemoTitleFormatter.swift */,
 				BA0000000000000000000012 /* MemoWindowView.swift */,
 				BA0000000000000000000013 /* MemoWindowController.swift */,
@@ -246,6 +252,8 @@
 				BA0000000000000000000136 /* CheckableTextView.swift in Sources */,
 				BA0000000000000000000138 /* EditorCommand.swift in Sources */,
 				BA0000000000000000000140 /* EditorTextOperations.swift in Sources */,
+				BA0000000000000000000149 /* RichTextContentCodec.swift in Sources */,
+				BA0000000000000000000150 /* EditorContentFactory.swift in Sources */,
 				BA0000000000000000000142 /* MemoTitleFormatter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
