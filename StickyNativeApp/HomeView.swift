@@ -8,6 +8,7 @@ private extension View {
 }
 
 struct HomeView: View {
+  @StateObject private var settings = AppSettings.shared
   @ObservedObject var viewModel: HomeViewModel
   let onOpenMemo: (UUID) -> Void
   let onTrashMemo: (UUID) -> Void
@@ -53,7 +54,7 @@ struct HomeView: View {
     }
     .buttonStyle(.plain)
     .foregroundStyle(.secondary)
-    .help(isSidebarVisible ? "Hide Sidebar" : "Show Sidebar")
+    .help(isSidebarVisible ? Str.hideSidebar : Str.showSidebar)
   }
 
   private var sidebar: some View {
@@ -68,7 +69,7 @@ struct HomeView: View {
 
       ScrollView {
         VStack(alignment: .leading, spacing: 3) {
-          sidebarRow(scope: .all, title: "All Memos", icon: "tray.full", count: viewModel.allMemosCount)
+          sidebarRow(scope: .all, title: Str.allMemos, icon: "tray.full", count: viewModel.allMemosCount)
 
           if viewModel.isFolderReady && !viewModel.folders.isEmpty {
             ForEach(viewModel.folders, id: \.id) { folder in
@@ -79,7 +80,7 @@ struct HomeView: View {
           Divider()
             .padding(.vertical, 4)
 
-          sidebarRow(scope: .trash, title: "Trash", icon: "trash", count: viewModel.trashCount)
+          sidebarRow(scope: .trash, title: Str.trash, icon: "trash", count: viewModel.trashCount)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 12)
@@ -91,7 +92,7 @@ struct HomeView: View {
         Button {
           isFolderManagerPresented = true
         } label: {
-          Label("New Folder", systemImage: "folder.badge.plus")
+          Label(Str.newFolder, systemImage: "folder.badge.plus")
             .font(.system(size: 12))
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
@@ -151,7 +152,7 @@ struct HomeView: View {
         Text(scopeTitle)
           .font(.system(size: 16, weight: .semibold))
           .lineLimit(1)
-        Text("\(memoCount) \(memoCount == 1 ? "memo" : "memos")")
+        Text("\(memoCount) \(memoCount == 1 ? Str.memoSingular : Str.memoPlural)")
           .font(.system(size: 11))
           .foregroundStyle(.secondary)
       }
@@ -162,7 +163,7 @@ struct HomeView: View {
         Image(systemName: "magnifyingglass")
           .foregroundStyle(.secondary)
           .font(.system(size: 12))
-        TextField("Search", text: $viewModel.searchQuery)
+        TextField(Str.search, text: $viewModel.searchQuery)
           .textFieldStyle(.plain)
           .font(.system(size: 13))
           .frame(width: 160)
@@ -173,7 +174,7 @@ struct HomeView: View {
       .clipShape(RoundedRectangle(cornerRadius: 7))
 
       if viewModel.selectedScope == .trash && !viewModel.trashedMemos.isEmpty {
-        Button("Empty Trash") { onEmptyTrash() }
+        Button(Str.emptyTrash) { onEmptyTrash() }
           .foregroundStyle(.red)
           .buttonStyle(.plain)
           .font(.system(size: 12))
@@ -230,9 +231,9 @@ struct HomeView: View {
       return folder.name
     }
     switch viewModel.selectedScope {
-    case .all: return "All Memos"
-    case .trash: return "Trash"
-    case .folder: return "Folder"
+    case .all: return Str.allMemos
+    case .trash: return Str.trash
+    case .folder: return Str.folderLabel
     }
   }
 
@@ -268,9 +269,9 @@ private struct MemoRowView: View {
     .onHover { isHovered = $0 }
     .contextMenu {
       if isTrashView {
-        Button("Restore") { onRestore() }
+        Button(Str.restore) { onRestore() }
       } else {
-        Button(memo.isListPinned ? "Unpin from List" : "Pin in List") {
+        Button(memo.isListPinned ? Str.unpinFromList : Str.pinInList) {
           onSetListPinned(!memo.isListPinned)
         }
 
@@ -280,7 +281,7 @@ private struct MemoRowView: View {
         }
 
         Divider()
-        Button("Move to Trash") { onTrash() }
+        Button(Str.moveToTrash) { onTrash() }
       }
     }
   }
@@ -288,7 +289,7 @@ private struct MemoRowView: View {
   private var memoSummary: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack(spacing: 6) {
-        Text(memo.title.isEmpty ? "Untitled" : memo.title)
+        Text(memo.title.isEmpty ? Str.untitled : memo.title)
           .font(.system(size: 13, weight: .medium))
           .foregroundStyle(memo.title.isEmpty ? .secondary : .primary)
           .lineLimit(1)
@@ -340,7 +341,7 @@ private struct MemoRowView: View {
   @ViewBuilder
   private var actionSurface: some View {
     if isTrashView {
-      Button("Restore") { onRestore() }
+      Button(Str.restore) { onRestore() }
         .font(.system(size: 11))
         .buttonStyle(.plain)
         .foregroundStyle(.blue)
@@ -372,10 +373,10 @@ private struct MemoRowView: View {
   @ViewBuilder
   private var folderAssignMenu: some View {
     if memo.sessionID != nil {
-      Button("Remove from Folder") { onAssignFolder(nil) }
+      Button(Str.removeFromFolder) { onAssignFolder(nil) }
     }
     if !folders.isEmpty {
-      Menu("Move to Folder") {
+      Menu(Str.moveToFolder) {
         ForEach(folders, id: \.id) { folder in
           Button(folder.name) { onAssignFolder(folder.id) }
         }
@@ -469,10 +470,10 @@ private struct FolderManagerView: View {
   var body: some View {
     VStack(spacing: 0) {
       HStack {
-        Text("Folders")
+        Text(Str.folders)
           .font(.system(size: 14, weight: .semibold))
         Spacer()
-        Button("Done") { dismiss() }
+        Button(Str.done) { dismiss() }
           .buttonStyle(.plain)
           .foregroundStyle(.blue)
       }
@@ -514,7 +515,7 @@ private struct FolderManagerView: View {
           Image(systemName: "plus")
             .font(.system(size: 11))
             .foregroundStyle(.secondary)
-          TextField("New Folder", text: $newFolderName)
+          TextField(Str.newFolder, text: $newFolderName)
             .textFieldStyle(.plain)
             .font(.system(size: 13))
             .onSubmit { submitNewFolder() }

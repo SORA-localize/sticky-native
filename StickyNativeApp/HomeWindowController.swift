@@ -1,10 +1,12 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
 final class HomeWindowController: NSWindowController, NSWindowDelegate {
   let viewModel: HomeViewModel
   private let coordinator: PersistenceCoordinator
+  private var cancellables: Set<AnyCancellable> = []
 
   var onOpenMemo: ((UUID) -> Void)?
   var onTrashMemo: ((UUID) -> Void)?
@@ -21,12 +23,17 @@ final class HomeWindowController: NSWindowController, NSWindowDelegate {
       backing: .buffered,
       defer: false
     )
-    window.title = "All Memos"
+    window.title = Str.allMemosWindowTitle
     window.minSize = NSSize(width: 560, height: 420)
     window.center()
 
     super.init(window: window)
     window.delegate = self
+
+    NotificationCenter.default.publisher(for: .languageDidChange)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in self?.window?.title = Str.allMemosWindowTitle }
+      .store(in: &cancellables)
 
     let rootView = HomeView(
       viewModel: viewModel,

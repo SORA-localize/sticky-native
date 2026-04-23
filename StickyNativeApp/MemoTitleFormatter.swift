@@ -9,9 +9,10 @@ enum MemoTitleFormatter {
     return abbreviated(title)
   }
 
+  @MainActor
   static func displayTitle(from draft: String) -> String {
     let title = generatedTitle(from: draft)
-    return title.isEmpty ? "New Memo" : title
+    return title.isEmpty ? Str.newMemoTitle : title
   }
 
   static func previewText(from draft: String) -> String {

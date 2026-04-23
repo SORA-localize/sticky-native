@@ -78,7 +78,7 @@ final class HomeViewModel: ObservableObject {
         $0.title.localizedCaseInsensitiveContains(query) ||
         $0.draft.localizedCaseInsensitiveContains(query)
       }
-      return results.isEmpty ? [] : [MemoListSection(id: "search", title: "Search Results", memos: results)]
+      return results.isEmpty ? [] : [MemoListSection(id: "search", title: Str.sectionSearchResults, memos: results)]
     }
 
     if selectedScope == .trash {
@@ -89,7 +89,7 @@ final class HomeViewModel: ObservableObject {
     let unpinned = scoped.filter { !$0.isListPinned }
     var result: [MemoListSection] = []
     if !pinned.isEmpty {
-      result.append(MemoListSection(id: "pinned", title: "Pinned", memos: pinned))
+      result.append(MemoListSection(id: "pinned", title: Str.sectionPinned, memos: pinned))
     }
     result.append(contentsOf: dateSections(for: unpinned))
     return result
@@ -97,15 +97,15 @@ final class HomeViewModel: ObservableObject {
 
   var emptyMessage: String {
     if !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-      return "No results"
+      return Str.noResults
     }
     switch selectedScope {
     case .all:
-      return "No memos"
+      return Str.noMemos
     case .trash:
-      return "Trash is empty"
+      return Str.trashIsEmpty
     case .folder:
-      return "No memos in this folder"
+      return Str.noMemosInFolder
     }
   }
 
@@ -157,13 +157,13 @@ final class HomeViewModel: ObservableObject {
 private enum DateBucket: String, CaseIterable {
   case today, yesterday, previous7Days, previous30Days, earlier
 
-  var title: String {
+  @MainActor var title: String {
     switch self {
-    case .today: return "Today"
-    case .yesterday: return "Yesterday"
-    case .previous7Days: return "Previous 7 Days"
-    case .previous30Days: return "Previous 30 Days"
-    case .earlier: return "Earlier"
+    case .today:          return Str.dateToday
+    case .yesterday:      return Str.dateYesterday
+    case .previous7Days:  return Str.datePrevious7Days
+    case .previous30Days: return Str.datePrevious30Days
+    case .earlier:        return Str.dateEarlier
     }
   }
 }

@@ -1,8 +1,11 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
 final class SettingsWindowController: NSWindowController {
+  private var cancellables: Set<AnyCancellable> = []
+
   init(appSettings: AppSettings) {
     let window = NSWindow(
       contentRect: NSRect(x: 0, y: 0, width: 500, height: 280),
@@ -10,10 +13,15 @@ final class SettingsWindowController: NSWindowController {
       backing: .buffered,
       defer: false
     )
-    window.title = "Settings"
+    window.title = Str.settingsWindowTitle
     window.center()
 
     super.init(window: window)
+
+    NotificationCenter.default.publisher(for: .languageDidChange)
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] _ in self?.window?.title = Str.settingsWindowTitle }
+      .store(in: &cancellables)
 
     window.contentView = NSHostingView(
       rootView: SettingsView().environmentObject(appSettings)

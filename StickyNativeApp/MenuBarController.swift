@@ -1,36 +1,47 @@
 import AppKit
+import Combine
 
 @MainActor
 final class MenuBarController: NSObject, NSMenuDelegate {
   private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
   private let menu = NSMenu()
 
-  private let newMemoItem    = NSMenuItem(title: "新規メモ", action: #selector(handleNewMemo),  keyEquivalent: "")
-  private let allMemosItem   = NSMenuItem(title: "すべてのメモ", action: #selector(handleOpenHome), keyEquivalent: "")
-  private let reopenItem     = NSMenuItem(title: "最後に閉じたメモを開く", action: #selector(handleReopen),   keyEquivalent: "")
-  private let shortcutsItem  = NSMenuItem(title: "キーボードショートカット...", action: #selector(handleOpenShortcuts), keyEquivalent: "")
-  private let quitItem       = NSMenuItem(title: "StickyNativeを終了", action: #selector(handleQuit),     keyEquivalent: "")
+  private let newMemoItem    = NSMenuItem(title: "", action: #selector(handleNewMemo),  keyEquivalent: "")
+  private let allMemosItem   = NSMenuItem(title: "", action: #selector(handleOpenHome), keyEquivalent: "")
+  private let reopenItem     = NSMenuItem(title: "", action: #selector(handleReopen),   keyEquivalent: "")
+  private let quitItem       = NSMenuItem(title: "", action: #selector(handleQuit),     keyEquivalent: "")
 
   // Font Size submenu
-  private let fontSmallItem  = NSMenuItem(title: "小", action: #selector(setFontSmall),  keyEquivalent: "")
-  private let fontMediumItem = NSMenuItem(title: "中", action: #selector(setFontMedium), keyEquivalent: "")
-  private let fontLargeItem  = NSMenuItem(title: "大", action: #selector(setFontLarge),  keyEquivalent: "")
+  private let fontSmallItem  = NSMenuItem(title: "", action: #selector(setFontSmall),  keyEquivalent: "")
+  private let fontMediumItem = NSMenuItem(title: "", action: #selector(setFontMedium), keyEquivalent: "")
+  private let fontLargeItem  = NSMenuItem(title: "", action: #selector(setFontLarge),  keyEquivalent: "")
 
   // Memo Size submenu
-  private let memoSmallItem  = NSMenuItem(title: "小", action: #selector(setMemoSmall),  keyEquivalent: "")
-  private let memoMediumItem = NSMenuItem(title: "中", action: #selector(setMemoMedium), keyEquivalent: "")
-  private let memoLargeItem  = NSMenuItem(title: "大", action: #selector(setMemoLarge),  keyEquivalent: "")
+  private let memoSmallItem  = NSMenuItem(title: "", action: #selector(setMemoSmall),  keyEquivalent: "")
+  private let memoMediumItem = NSMenuItem(title: "", action: #selector(setMemoMedium), keyEquivalent: "")
+  private let memoLargeItem  = NSMenuItem(title: "", action: #selector(setMemoLarge),  keyEquivalent: "")
 
   // Memo Color submenu
-  private let memoColorDefaultItem  = NSMenuItem(title: "デフォルト", action: #selector(setMemoColorDefault), keyEquivalent: "")
-  private let memoColorColorfulItem = NSMenuItem(title: "カラフル", action: #selector(setMemoColorColorful), keyEquivalent: "")
+  private let memoColorDefaultItem  = NSMenuItem(title: "", action: #selector(setMemoColorDefault), keyEquivalent: "")
+  private let memoColorColorfulItem = NSMenuItem(title: "", action: #selector(setMemoColorColorful), keyEquivalent: "")
+
+  // Language submenu
+  private let languageEnglishItem  = NSMenuItem(title: "English",  action: #selector(setLanguageEnglish), keyEquivalent: "")
+  private let languageJapaneseItem = NSMenuItem(title: "日本語", action: #selector(setLanguageJapanese), keyEquivalent: "")
+
+  // Submenu parent items (need title updates)
+  private let fontSizeParent  = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+  private let memoSizeParent  = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+  private let memoColorParent = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+  private let languageParent  = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+  private let memoSectionHeader  = NSMenuItem()
+  private let settingsSectionHeader = NSMenuItem()
 
   private let appSettings: AppSettings
 
   var onNewMemo: (() -> Void)?
   var onOpenHome: (() -> Void)?
   var onReopenLastClosed: (() -> Void)?
-  var onOpenShortcuts: (() -> Void)?
 
   init(appSettings: AppSettings) {
     self.appSettings = appSettings
@@ -42,58 +53,58 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     let allItems = [
-      newMemoItem, allMemosItem, reopenItem, shortcutsItem, quitItem,
+      newMemoItem, allMemosItem, reopenItem, quitItem,
       fontSmallItem, fontMediumItem, fontLargeItem,
       memoSmallItem, memoMediumItem, memoLargeItem,
       memoColorDefaultItem, memoColorColorfulItem,
+      languageEnglishItem, languageJapaneseItem,
     ]
     allItems.forEach { $0.target = self }
 
     // Font Size submenu
     let fontSizeMenu = NSMenu()
     fontSizeMenu.items = [fontSmallItem, fontMediumItem, fontLargeItem]
-    let fontSizeParent = NSMenuItem(title: "文字サイズ", action: nil, keyEquivalent: "")
     fontSizeParent.submenu = fontSizeMenu
 
     // Memo Size submenu
     let memoSizeMenu = NSMenu()
     memoSizeMenu.items = [memoSmallItem, memoMediumItem, memoLargeItem]
-    let memoSizeParent = NSMenuItem(title: "メモサイズ", action: nil, keyEquivalent: "")
     memoSizeParent.submenu = memoSizeMenu
 
+    // Memo Color submenu
     let memoColorMenu = NSMenu()
     memoColorMenu.items = [memoColorDefaultItem, memoColorColorfulItem]
-    let memoColorParent = NSMenuItem(title: "メモカラー", action: nil, keyEquivalent: "")
     memoColorParent.submenu = memoColorMenu
 
-    // Hotkeys submenu（表示のみ）
-    let hotkeyItem = NSMenuItem(title: "新規メモ作成    ⌘ + ⌥ + Enter", action: nil, keyEquivalent: "")
-    hotkeyItem.isEnabled = false
-    let hotkeysMenu = NSMenu()
-    hotkeysMenu.items = [hotkeyItem]
-    let hotkeysParent = NSMenuItem(title: "ショートカット", action: nil, keyEquivalent: "")
-    hotkeysParent.submenu = hotkeysMenu
+    // Language submenu
+    let languageMenu = NSMenu()
+    languageMenu.items = [languageEnglishItem, languageJapaneseItem]
+    languageParent.submenu = languageMenu
+
+    // Section headers
+    for header in [memoSectionHeader, settingsSectionHeader] {
+      header.isEnabled = false
+    }
 
     menu.autoenablesItems = false
     menu.delegate = self
     menu.items = [
-      sectionHeader("メモ"),
+      memoSectionHeader,
       newMemoItem,
       allMemosItem,
       reopenItem,
       NSMenuItem.separator(),
-      sectionHeader("設定"),
+      settingsSectionHeader,
       fontSizeParent,
       memoSizeParent,
       memoColorParent,
-      hotkeysParent,
-      NSMenuItem.separator(),
-      shortcutsItem,
+      languageParent,
       NSMenuItem.separator(),
       quitItem,
     ]
 
     statusItem.menu = menu
+    updateMenuTitles()
     update(canReopen: false)
     updateCheckmarks()
   }
@@ -110,6 +121,32 @@ final class MenuBarController: NSObject, NSMenuDelegate {
 
   // MARK: - Private
 
+  private func updateMenuTitles() {
+    memoSectionHeader.attributedTitle = sectionHeaderString(Str.menuSectionMemo)
+    settingsSectionHeader.attributedTitle = sectionHeaderString(Str.menuSectionSettings)
+
+    newMemoItem.title    = Str.menuNewMemo
+    allMemosItem.title   = Str.allMemos
+    reopenItem.title     = Str.menuReopenLast
+    quitItem.title       = Str.menuQuit
+
+    fontSmallItem.title  = Str.sizeSmall
+    fontMediumItem.title = Str.sizeMedium
+    fontLargeItem.title  = Str.sizeLarge
+
+    memoSmallItem.title  = Str.sizeSmall
+    memoMediumItem.title = Str.sizeMedium
+    memoLargeItem.title  = Str.sizeLarge
+
+    memoColorDefaultItem.title  = Str.colorDefault
+    memoColorColorfulItem.title = Str.colorColorful
+
+    fontSizeParent.title  = Str.labelFontSize
+    memoSizeParent.title  = Str.labelMemoSize
+    memoColorParent.title = Str.labelMemoColor
+    languageParent.title  = Str.menuLanguage
+  }
+
   private func updateCheckmarks() {
     let fontSize = appSettings.editorFontSize
     fontSmallItem.state  = fontSize == 13 ? .on : .off
@@ -122,21 +159,21 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     memoMediumItem.state = (w == 440 && h == 300) ? .on : .off
     memoLargeItem.state  = (w == 560 && h == 380) ? .on : .off
 
-    memoColorDefaultItem.state = appSettings.memoColorMode == .default ? .on : .off
+    memoColorDefaultItem.state  = appSettings.memoColorMode == .default  ? .on : .off
     memoColorColorfulItem.state = appSettings.memoColorMode == .colorful ? .on : .off
+
+    languageEnglishItem.state  = appSettings.language == .english  ? .on : .off
+    languageJapaneseItem.state = appSettings.language == .japanese ? .on : .off
   }
 
-  private func sectionHeader(_ title: String) -> NSMenuItem {
-    let item = NSMenuItem()
-    item.isEnabled = false
-    item.attributedTitle = NSAttributedString(
+  private func sectionHeaderString(_ title: String) -> NSAttributedString {
+    NSAttributedString(
       string: title,
       attributes: [
         .font: NSFont.systemFont(ofSize: 10, weight: .medium),
         .foregroundColor: NSColor.secondaryLabelColor,
       ]
     )
-    return item
   }
 
   // MARK: - Actions
@@ -149,12 +186,29 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   @objc private func setMemoMedium() { appSettings.defaultMemoWidth = 440; appSettings.defaultMemoHeight = 300; updateCheckmarks() }
   @objc private func setMemoLarge()  { appSettings.defaultMemoWidth = 560; appSettings.defaultMemoHeight = 380; updateCheckmarks() }
 
-  @objc private func setMemoColorDefault()  { appSettings.memoColorMode = .default; updateCheckmarks() }
+  @objc private func setMemoColorDefault()  { appSettings.memoColorMode = .default;  updateCheckmarks() }
   @objc private func setMemoColorColorful() { appSettings.memoColorMode = .colorful; updateCheckmarks() }
 
-  @objc private func handleNewMemo()      { onNewMemo?() }
-  @objc private func handleOpenHome()     { onOpenHome?() }
-  @objc private func handleReopen()       { onReopenLastClosed?() }
-  @objc private func handleOpenShortcuts() { onOpenShortcuts?() }
-  @objc private func handleQuit()         { NSApp.terminate(nil) }
+  @objc private func setLanguageEnglish() {
+    appSettings.language = .english
+    updateMenuTitles()
+    updateCheckmarks()
+    NotificationCenter.default.post(name: .languageDidChange, object: nil)
+  }
+
+  @objc private func setLanguageJapanese() {
+    appSettings.language = .japanese
+    updateMenuTitles()
+    updateCheckmarks()
+    NotificationCenter.default.post(name: .languageDidChange, object: nil)
+  }
+
+  @objc private func handleNewMemo()  { onNewMemo?() }
+  @objc private func handleOpenHome() { onOpenHome?() }
+  @objc private func handleReopen()   { onReopenLastClosed?() }
+  @objc private func handleQuit()     { NSApp.terminate(nil) }
+}
+
+extension Notification.Name {
+  static let languageDidChange = Notification.Name("languageDidChange")
 }

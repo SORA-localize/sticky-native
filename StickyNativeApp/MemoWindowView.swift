@@ -10,6 +10,7 @@ struct MemoWindowView: View {
     case close
   }
 
+  @StateObject private var settings = AppSettings.shared
   @ObservedObject var memo: MemoWindow
   @ObservedObject var uiState: MemoWindowUIState
   let onPinToggle: () -> Void
@@ -157,9 +158,9 @@ struct MemoWindowView: View {
         .shadow(color: (uiState.flashCommand?.color ?? .clear).opacity(0.7), radius: 12)
         .opacity(uiState.flashCommand != nil ? 1 : 0)
     )
-    .alert("このメモをゴミ箱に移しますか？", isPresented: $showingTrashConfirmation) {
-      Button("ゴミ箱に移す") { onTrash() }
-      Button("キャンセル", role: .cancel) {}
+    .alert(Str.trashAlertTitle, isPresented: $showingTrashConfirmation) {
+      Button(Str.trashAlertConfirm) { onTrash() }
+      Button(Str.trashAlertCancel, role: .cancel) {}
     }
   }
 

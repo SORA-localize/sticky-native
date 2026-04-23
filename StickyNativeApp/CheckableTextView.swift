@@ -93,11 +93,11 @@ private enum MarkdownSelectionAction: CaseIterable {
     }
   }
 
-  var tooltip: String {
+  @MainActor var tooltip: String {
     switch self {
-    case .bold: return "太字"
-    case .underline: return "下線"
-    case .strikethrough: return "取り消し線"
+    case .bold:          return Str.editorBold
+    case .underline:     return Str.editorUnderline
+    case .strikethrough: return Str.editorStrikethrough
     }
   }
 
@@ -531,12 +531,12 @@ final class CheckboxNSTextView: NSTextView {
     let menu = NSMenu()
 
     if let url = url(for: event) {
-      let openItem = NSMenuItem(title: "リンクを開く", action: #selector(openSmartLink(_:)), keyEquivalent: "")
+      let openItem = NSMenuItem(title: Str.editorOpenLink, action: #selector(openSmartLink(_:)), keyEquivalent: "")
       openItem.target = self
       openItem.representedObject = url
       menu.addItem(openItem)
 
-      let copyItem = NSMenuItem(title: "リンクをコピー", action: #selector(copySmartLink(_:)), keyEquivalent: "")
+      let copyItem = NSMenuItem(title: Str.editorCopyLink, action: #selector(copySmartLink(_:)), keyEquivalent: "")
       copyItem.target = self
       copyItem.representedObject = url
       menu.addItem(copyItem)
@@ -551,11 +551,11 @@ final class CheckboxNSTextView: NSTextView {
     }
 
     menu.addItem(.separator())
-    menu.addItem(NSMenuItem(title: "切り取り", action: #selector(cut(_:)), keyEquivalent: ""))
-    menu.addItem(NSMenuItem(title: "コピー", action: #selector(copy(_:)), keyEquivalent: ""))
-    menu.addItem(NSMenuItem(title: "ペースト", action: #selector(paste(_:)), keyEquivalent: ""))
+    menu.addItem(NSMenuItem(title: Str.editorCut,   action: #selector(cut(_:)),   keyEquivalent: ""))
+    menu.addItem(NSMenuItem(title: Str.editorCopy,  action: #selector(copy(_:)),  keyEquivalent: ""))
+    menu.addItem(NSMenuItem(title: Str.editorPaste, action: #selector(paste(_:)), keyEquivalent: ""))
     menu.addItem(.separator())
-    menu.addItem(NSMenuItem(title: "すべて選択", action: #selector(selectAll(_:)), keyEquivalent: ""))
+    menu.addItem(NSMenuItem(title: Str.editorSelectAll, action: #selector(selectAll(_:)), keyEquivalent: ""))
 
     return menu
   }

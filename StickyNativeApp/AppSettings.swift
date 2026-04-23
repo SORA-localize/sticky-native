@@ -1,5 +1,16 @@
 import Foundation
 
+enum AppLanguage: String {
+  case english, japanese
+
+  static func defaultLanguage() -> AppLanguage {
+    guard let saved = UserDefaults.standard.string(forKey: "appLanguage") else {
+      return .japanese
+    }
+    return AppLanguage(rawValue: saved) ?? .english
+  }
+}
+
 enum MemoColorMode: Int, CaseIterable {
   case `default` = 0
   case colorful = 1
@@ -21,6 +32,7 @@ final class AppSettings: ObservableObject {
     static let defaultMemoHeight = "defaultMemoHeight"
     static let nextMemoColorIndex = "nextMemoColorIndex"
     static let memoColorMode = "memoColorMode"
+    static let language = "appLanguage"
   }
 
   @Published var editorFontSize: Double {
@@ -43,6 +55,10 @@ final class AppSettings: ObservableObject {
     didSet { UserDefaults.standard.set(memoColorMode.rawValue, forKey: Keys.memoColorMode) }
   }
 
+  @Published var language: AppLanguage {
+    didSet { UserDefaults.standard.set(language.rawValue, forKey: Keys.language) }
+  }
+
   private init() {
     let storedFontSize = UserDefaults.standard.double(forKey: Keys.editorFontSize)
     self.editorFontSize = storedFontSize > 0 ? storedFontSize : 16
@@ -58,6 +74,8 @@ final class AppSettings: ObservableObject {
 
     let storedMemoColorMode = UserDefaults.standard.object(forKey: Keys.memoColorMode) as? Int
     self.memoColorMode = MemoColorMode.from(rawValue: storedMemoColorMode ?? MemoColorMode.fallback.rawValue)
+
+    self.language = AppLanguage.defaultLanguage()
   }
 
   func makeNewMemoColorTheme() -> MemoColorTheme {

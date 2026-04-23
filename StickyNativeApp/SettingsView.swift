@@ -13,10 +13,19 @@ struct SettingsView: View {
 
     var icon: String {
       switch self {
-      case .font:    return "textformat.size"
-      case .memo:    return "rectangle.expand.vertical"
+      case .font:      return "textformat.size"
+      case .memo:      return "rectangle.expand.vertical"
       case .memoColor: return "paintpalette"
-      case .hotkeys: return "keyboard"
+      case .hotkeys:   return "keyboard"
+      }
+    }
+
+    @MainActor var displayName: String {
+      switch self {
+      case .font:      return Str.labelFontSize
+      case .memo:      return Str.labelMemoSize
+      case .memoColor: return Str.labelMemoColor
+      case .hotkeys:   return Str.labelHotkeys
       }
     }
   }
@@ -24,7 +33,7 @@ struct SettingsView: View {
   var body: some View {
     NavigationSplitView {
       List(SettingsSection.allCases, selection: $selection) { section in
-        Label(section.rawValue, systemImage: section.icon)
+        Label(section.displayName, systemImage: section.icon)
           .tag(section)
       }
       .navigationSplitViewColumnWidth(160)
@@ -48,13 +57,13 @@ struct SettingsView: View {
 private struct FontSizeSettings: View {
   @EnvironmentObject var appSettings: AppSettings
 
-  private let fontSizes: [(label: String, value: Double)] = [
-    ("小", 13), ("中", 16), ("大", 19),
-  ]
+  private var fontSizes: [(label: String, value: Double)] {
+    [(Str.sizeSmall, 13), (Str.sizeMedium, 16), (Str.sizeLarge, 19)]
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Text("エディタのフォントサイズ")
+      Text(Str.settingsFontSizeHeader)
         .font(.headline)
       Picker("", selection: $appSettings.editorFontSize) {
         ForEach(fontSizes, id: \.value) { item in
@@ -71,15 +80,13 @@ private struct FontSizeSettings: View {
 private struct MemoSizeSettings: View {
   @EnvironmentObject var appSettings: AppSettings
 
-  private let presets: [(label: String, width: Double, height: Double)] = [
-    ("小", 360, 240),
-    ("中", 440, 300),
-    ("大", 560, 380),
-  ]
+  private var presets: [(label: String, width: Double, height: Double)] {
+    [(Str.sizeSmall, 360, 240), (Str.sizeMedium, 440, 300), (Str.sizeLarge, 560, 380)]
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Text("新規メモのデフォルトサイズ")
+      Text(Str.settingsMemoSizeHeader)
         .font(.headline)
 
       Picker("", selection: Binding(
@@ -87,7 +94,7 @@ private struct MemoSizeSettings: View {
           presets.first {
             $0.width == appSettings.defaultMemoWidth &&
             $0.height == appSettings.defaultMemoHeight
-          }?.label ?? "カスタム"
+          }?.label ?? Str.settingsCustom
         },
         set: { label in
           if let preset = presets.first(where: { $0.label == label }) {
@@ -116,12 +123,12 @@ private struct MemoColorSettings: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Text("新規メモのカラー")
+      Text(Str.settingsMemoColorHeader)
         .font(.headline)
 
       Picker("", selection: $appSettings.memoColorMode) {
-        Text("デフォルト").tag(MemoColorMode.default)
-        Text("カラフル").tag(MemoColorMode.colorful)
+        Text(Str.colorDefault).tag(MemoColorMode.default)
+        Text(Str.colorColorful).tag(MemoColorMode.colorful)
       }
       .pickerStyle(.segmented)
       .labelsHidden()
@@ -135,10 +142,8 @@ private struct MemoColorSettings: View {
 
   private var description: String {
     switch appSettings.memoColorMode {
-    case .default:
-      return "新規メモを標準カラーで固定します。"
-    case .colorful:
-      return "新規メモを複数カラーで順番に作成します。"
+    case .default:  return Str.settingsColorDefaultDesc
+    case .colorful: return Str.settingsColorColorfulDesc
     }
   }
 }
@@ -146,11 +151,11 @@ private struct MemoColorSettings: View {
 private struct HotkeysSettings: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
-      Text("グローバルショートカット")
+      Text(Str.settingsHotkeysHeader)
         .font(.headline)
 
       HStack {
-        Text("新規メモを作成")
+        Text(Str.settingsCreateMemo)
           .font(.system(size: 13))
         Spacer()
         Text("⌘ + ⌥ + Enter")
@@ -163,7 +168,7 @@ private struct HotkeysSettings: View {
       }
       .frame(maxWidth: 280)
 
-      Text("カスタマイズは今後対応予定です。")
+      Text(Str.settingsHotkeysNote)
         .font(.system(size: 12))
         .foregroundStyle(.secondary)
     }

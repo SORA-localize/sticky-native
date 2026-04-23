@@ -40,9 +40,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     menuBarController.onReopenLastClosed = { [weak self] in
       self?.windowManager.reopenLastClosedMemo()
     }
-    menuBarController.onOpenShortcuts = { [weak self] in
-      self?.shortcutsWindowController.show()
-    }
 
     windowManager.onClosedStackChanged = { [weak self] in
       guard let self else { return }
