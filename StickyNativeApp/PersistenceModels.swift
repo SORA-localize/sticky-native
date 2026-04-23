@@ -3,6 +3,7 @@ import Foundation
 struct PersistedMemo {
   let id: UUID
   let draft: String
+  let richTextData: Data?
   let title: String
   let originX: Double?
   let originY: Double?

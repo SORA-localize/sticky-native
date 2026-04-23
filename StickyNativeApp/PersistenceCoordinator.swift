@@ -16,11 +16,21 @@ final class PersistenceCoordinator {
   }
 
   func saveDraft(id: UUID, draft: String, colorIndex: Int) {
+    saveMemoContent(id: id, draft: draft, richTextData: nil, colorIndex: colorIndex)
+  }
+
+  func saveMemoContent(id: UUID, draft: String, richTextData: Data?, colorIndex: Int) {
     let title = Self.generateTitle(from: draft)
     do {
-      try store.upsertDraft(id: id, draft: draft, title: title, colorIndex: colorIndex)
+      try store.upsertContent(
+        id: id,
+        draft: draft,
+        title: title,
+        colorIndex: colorIndex,
+        richTextData: richTextData
+      )
     } catch {
-      logFailure("save draft \(id.uuidString)", error)
+      logFailure("save memo content \(id.uuidString)", error)
     }
   }
 

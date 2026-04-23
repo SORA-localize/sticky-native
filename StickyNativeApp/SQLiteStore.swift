@@ -4,15 +4,15 @@ import SQLite3
 final class SQLiteStore {
   private var db: OpaquePointer?
 
-  // SELECT で使う標準列順（isSessionReady == true 時は末尾に 15:session_id が追加される）
+  // SELECT で使う標準列順（isSessionReady == true 時は末尾に 16:session_id が追加される）
   // 0:id 1:draft 2:title 3:origin_x 4:origin_y 5:width 6:height 7:color_index
   // 8:is_pinned 9:is_list_pinned 10:is_open 11:is_trashed 12:created_at 13:updated_at
-  // 14:content_edited_at [15:session_id]
+  // 14:content_edited_at 15:rich_text_data [16:session_id]
   private var selectColumns: String {
     let base = """
       id, draft, title, origin_x, origin_y, width, height, color_index,
       is_pinned, is_list_pinned, is_open, is_trashed, created_at, updated_at,
-      content_edited_at
+      content_edited_at, rich_text_data
       """
     return isSessionReady ? base + ", session_id" : base
   }
@@ -125,14 +125,25 @@ final class SQLiteStore {
   // MARK: - Memo CRUD
 
   func upsertDraft(id: UUID, draft: String, title: String, colorIndex: Int) throws {
+    try upsertContent(id: id, draft: draft, title: title, colorIndex: colorIndex, richTextData: nil)
+  }
+
+  func upsertContent(
+    id: UUID,
+    draft: String,
+    title: String,
+    colorIndex: Int,
+    richTextData: Data?
+  ) throws {
     let now = Date.now.timeIntervalSince1970
     let sql = """
-      INSERT INTO memos (id, draft, title, color_index, is_pinned, is_open, is_trashed, created_at, updated_at, content_edited_at)
-      VALUES (?, ?, ?, ?, 0, 1, 0, ?, ?, ?)
+      INSERT INTO memos (id, draft, title, color_index, rich_text_data, is_pinned, is_open, is_trashed, created_at, updated_at, content_edited_at)
+      VALUES (?, ?, ?, ?, ?, 0, 1, 0, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         draft             = excluded.draft,
         title             = excluded.title,
         color_index       = excluded.color_index,
+        rich_text_data    = excluded.rich_text_data,
         updated_at        = excluded.updated_at,
         content_edited_at = excluded.content_edited_at;
       """
@@ -144,9 +155,10 @@ final class SQLiteStore {
     sqlite3_bind_text(stmt, 2, draft, -1, SQLITE_TRANSIENT)
     sqlite3_bind_text(stmt, 3, title, -1, SQLITE_TRANSIENT)
     sqlite3_bind_int(stmt, 4, Int32(colorIndex))
-    sqlite3_bind_double(stmt, 5, now)
+    bindOptionalBlob(stmt, 5, richTextData)
     sqlite3_bind_double(stmt, 6, now)
     sqlite3_bind_double(stmt, 7, now)
+    sqlite3_bind_double(stmt, 8, now)
     try step(stmt)
   }
 
@@ -416,6 +428,23 @@ final class SQLiteStore {
     }
   }
 
+  private func bindOptionalBlob(_ stmt: OpaquePointer?, _ index: Int32, _ data: Data?) {
+    guard let data else {
+      sqlite3_bind_null(stmt, index)
+      return
+    }
+    data.withUnsafeBytes { buffer in
+      _ = sqlite3_bind_blob(stmt, index, buffer.baseAddress, Int32(buffer.count), SQLITE_TRANSIENT)
+    }
+  }
+
+  private func optionalBlob(_ stmt: OpaquePointer?, _ index: Int32) -> Data? {
+    guard sqlite3_column_type(stmt, index) != SQLITE_NULL else { return nil }
+    guard let bytes = sqlite3_column_blob(stmt, index) else { return nil }
+    let count = Int(sqlite3_column_bytes(stmt, index))
+    return Data(bytes: bytes, count: count)
+  }
+
   private func memoRow(from stmt: OpaquePointer?) -> PersistedMemo? {
     guard
       let rawID = sqlite3_column_text(stmt, 0).map({ String(cString: $0) }),
@@ -433,13 +462,15 @@ final class SQLiteStore {
       ? Date(timeIntervalSince1970: sqlite3_column_double(stmt, 12))
       : nil as Date?
     let contentEditedAt = Date(timeIntervalSince1970: sqlite3_column_double(stmt, 14))
+    let richTextData = optionalBlob(stmt, 15)
     let sessionID: UUID? = isSessionReady
-      ? sqlite3_column_text(stmt, 15).flatMap { UUID(uuidString: String(cString: $0)) }
+      ? sqlite3_column_text(stmt, 16).flatMap { UUID(uuidString: String(cString: $0)) }
       : nil
 
     return PersistedMemo(
       id: id,
       draft: rawDraft,
+      richTextData: richTextData,
       title: title,
       originX: originX,
       originY: originY,
