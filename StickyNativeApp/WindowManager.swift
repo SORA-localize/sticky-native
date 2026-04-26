@@ -127,6 +127,8 @@ final class WindowManager {
     openControllers[memo.id] = controller
     controller.showAndFocusEditor()
     lastCascadeOrigin = controller.currentFrame?.origin
+    coordinator.saveMemoContent(id: memo.id, content: EditorContent(plainText: ""), colorIndex: memo.colorTheme.colorIndex)
+    onClosedStackChanged?()
   }
 
   func reopenLastClosedMemo() {

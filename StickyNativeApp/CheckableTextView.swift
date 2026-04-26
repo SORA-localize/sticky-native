@@ -513,6 +513,33 @@ final class CheckboxNSTextView: NSTextView {
     return result
   }
 
+  override func paste(_ sender: Any?) {
+    let pb = NSPasteboard.general
+    let baseFont = font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+
+    let raw: NSAttributedString?
+    if let data = pb.data(forType: .rtf) {
+      raw = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil)
+    } else if let data = pb.data(forType: NSPasteboard.PasteboardType("public.html")) {
+      raw = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil)
+    } else {
+      raw = nil
+    }
+
+    let sanitized: NSAttributedString
+    if let raw {
+      sanitized = RichTextContentCodec.normalizedAttributedString(from: raw, baseFont: baseFont)
+    } else if let plain = pb.string(forType: .string) {
+      sanitized = NSAttributedString(string: plain, attributes: typingAttributes)
+    } else {
+      return
+    }
+
+    let replaceRange = selectedRange()
+    guard shouldChangeText(in: replaceRange, replacementString: sanitized.string) else { return }
+    insertText(sanitized, replacementRange: replaceRange)
+  }
+
   override func keyDown(with event: NSEvent) {
     if !hasMarkedText(), let command = EditorCommand.allCases.first(where: { $0.matches(event) }) {
       perform(command)
