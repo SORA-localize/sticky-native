@@ -14,11 +14,11 @@ enum EditorCommand: String, CaseIterable {
   var label: String {
     switch self {
     case .toggleCheckbox:
-      return "チェックボックス切り替え"
+      return isJapanese ? "チェックボックス切り替え" : "Toggle Checkbox"
     case .insertDate:
-      return "日付を挿入"
+      return isJapanese ? "日付を挿入" : "Insert Date"
     case .insertDateTime:
-      return "日時を挿入"
+      return isJapanese ? "日時を挿入" : "Insert Date & Time"
     }
   }
 
@@ -74,5 +74,9 @@ enum EditorCommand: String, CaseIterable {
     case .insertDateTime:
       return EditorTextOperations.insertDateTime(in: text, selectedRange: selectedRange, date: now)
     }
+  }
+
+  private var isJapanese: Bool {
+    UserDefaults.standard.string(forKey: "appLanguage") == AppLanguage.japanese.rawValue
   }
 }

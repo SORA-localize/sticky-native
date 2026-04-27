@@ -11,7 +11,10 @@ struct Str {
 
   // MARK: - Menu: Settings section
   static var menuSectionSettings: String { isJa ? "設定"                    : "Settings" }
+  static var menuSectionHelp:     String { isJa ? "ヘルプ"                  : "Help" }
   static var menuLanguage:        String { isJa ? "言語"                    : "Language" }
+  static var menuSettings:        String { isJa ? "設定..."                 : "Settings..." }
+  static var menuShortcuts:       String { isJa ? "ショートカット..."         : "Shortcuts..." }
   static var menuQuit:            String { isJa ? "StickyNativeを終了"       : "Quit StickyNative" }
 
   // MARK: - Size labels (menu + settings shared)
@@ -99,9 +102,13 @@ struct Str {
   static var settingsHotkeysNote:     String {
     isJa ? "カスタマイズは今後対応予定です。" : "Customization will be supported in a future update."
   }
+  static var settingsOpenShortcutReference: String {
+    isJa ? "ショートカット一覧を開く" : "Open Shortcut Reference"
+  }
 
   // MARK: - Window titles
   static var settingsWindowTitle: String { isJa ? "設定"                    : "Settings" }
+  static var shortcutsWindowTitle: String { isJa ? "キーボードショートカット"   : "Keyboard Shortcuts" }
   static var allMemosWindowTitle: String { isJa ? "すべてのメモ"              : "All Memos" }
   static var launching:           String { isJa ? "起動中..."                : "Launching..." }
 
@@ -114,6 +121,9 @@ struct Str {
   static var editorBold:          String { isJa ? "太字"                    : "Bold" }
   static var editorUnderline:     String { isJa ? "下線"                    : "Underline" }
   static var editorStrikethrough: String { isJa ? "取り消し線"               : "Strikethrough" }
+  static var editorToggleCheckbox:String { isJa ? "チェックボックス切り替え"    : "Toggle Checkbox" }
+  static var editorInsertDate:    String { isJa ? "日付を挿入"               : "Insert Date" }
+  static var editorInsertDateTime:String { isJa ? "日時を挿入"               : "Insert Date & Time" }
   static var editorOpenLink:      String { isJa ? "リンクを開く"              : "Open Link" }
   static var editorCopyLink:      String { isJa ? "リンクをコピー"            : "Copy Link" }
   static var editorCut:           String { isJa ? "切り取り"                 : "Cut" }
@@ -123,4 +133,16 @@ struct Str {
 
   // MARK: - Memo title
   static var newMemoTitle:        String { isJa ? "新規メモ"                 : "New Memo" }
+
+  // MARK: - Shortcut reference
+  static var shortcutsSectionGlobal: String { isJa ? "グローバル"             : "Global" }
+  static var shortcutsSectionMemoWindow: String { isJa ? "メモウィンドウ"      : "Memo Window" }
+  static var shortcutsSectionHeaderButtons: String { isJa ? "ヘッダボタン"    : "Header Buttons" }
+  static var shortcutsNewMemo:    String { isJa ? "新しいメモを作成"          : "Create New Memo" }
+  static var shortcutsSave:       String { isJa ? "保存"                    : "Save" }
+  static var shortcutsSaveAndClose: String { isJa ? "保存して閉じる"         : "Save and Close" }
+  static var shortcutsClose:      String { isJa ? "閉じる"                  : "Close" }
+  static var shortcutsMoveToTrash: String { isJa ? "ゴミ箱に移す"            : "Move to Trash" }
+  static var shortcutsTogglePin:  String { isJa ? "常時前面 ON / OFF"        : "Toggle Always On Top" }
+  static var shortcutsCloseAutosave: String { isJa ? "閉じる（自動保存）"    : "Close (Autosaves)" }
 }

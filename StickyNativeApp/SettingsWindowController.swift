@@ -6,9 +6,9 @@ import SwiftUI
 final class SettingsWindowController: NSWindowController {
   private var cancellables: Set<AnyCancellable> = []
 
-  init(appSettings: AppSettings) {
+  init(appSettings: AppSettings, onOpenShortcuts: @escaping () -> Void) {
     let window = NSWindow(
-      contentRect: NSRect(x: 0, y: 0, width: 500, height: 280),
+      contentRect: NSRect(x: 0, y: 0, width: 560, height: 520),
       styleMask: [.titled, .closable],
       backing: .buffered,
       defer: false
@@ -24,7 +24,7 @@ final class SettingsWindowController: NSWindowController {
       .store(in: &cancellables)
 
     window.contentView = NSHostingView(
-      rootView: SettingsView().environmentObject(appSettings)
+      rootView: SettingsView(onOpenShortcuts: onOpenShortcuts).environmentObject(appSettings)
     )
   }
 

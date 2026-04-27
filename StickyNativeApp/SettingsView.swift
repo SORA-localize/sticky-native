@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
   @EnvironmentObject var appSettings: AppSettings
   @State private var selection: SettingsSection? = .font
+  let onOpenShortcuts: () -> Void
 
   enum SettingsSection: String, CaseIterable, Identifiable {
     case font = "Font Size"
@@ -43,12 +44,13 @@ struct SettingsView: View {
         case .font:    FontSizeSettings()
         case .memo:    MemoSizeSettings()
         case .memoColor: MemoColorSettings()
-        case .hotkeys: HotkeysSettings()
+        case .hotkeys: HotkeysSettings(onOpenShortcuts: onOpenShortcuts)
         case nil:      FontSizeSettings()
         }
       }
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       .padding(24)
+      .id(appSettings.language.rawValue)
     }
     .environmentObject(appSettings)
   }
@@ -149,28 +151,28 @@ private struct MemoColorSettings: View {
 }
 
 private struct HotkeysSettings: View {
+  let onOpenShortcuts: () -> Void
+
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Text(Str.settingsHotkeysHeader)
-        .font(.headline)
+    ScrollView {
+      VStack(alignment: .leading, spacing: 20) {
+        HStack(alignment: .top) {
+          VStack(alignment: .leading, spacing: 6) {
+            Text(Str.settingsHotkeysHeader)
+              .font(.headline)
 
-      HStack {
-        Text(Str.settingsCreateMemo)
-          .font(.system(size: 13))
-        Spacer()
-        Text("⌘ + ⌥ + Enter")
-          .font(.system(size: 12, design: .monospaced))
-          .foregroundStyle(.secondary)
-          .padding(.horizontal, 6)
-          .padding(.vertical, 2)
-          .background(Color(NSColor.controlBackgroundColor))
-          .clipShape(RoundedRectangle(cornerRadius: 4))
+            Text(Str.settingsHotkeysNote)
+              .font(.system(size: 12))
+              .foregroundStyle(.secondary)
+          }
+
+          Spacer()
+
+          Button(Str.settingsOpenShortcutReference, action: onOpenShortcuts)
+        }
+
+        ShortcutReferenceView(compact: true)
       }
-      .frame(maxWidth: 280)
-
-      Text(Str.settingsHotkeysNote)
-        .font(.system(size: 12))
-        .foregroundStyle(.secondary)
     }
   }
 }

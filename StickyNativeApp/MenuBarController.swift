@@ -9,6 +9,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   private let newMemoItem    = NSMenuItem(title: "", action: #selector(handleNewMemo),  keyEquivalent: "")
   private let allMemosItem   = NSMenuItem(title: "", action: #selector(handleOpenHome), keyEquivalent: "")
   private let reopenItem     = NSMenuItem(title: "", action: #selector(handleReopen),   keyEquivalent: "")
+  private let shortcutsItem  = NSMenuItem(title: "", action: #selector(handleOpenShortcuts), keyEquivalent: "")
   private let quitItem       = NSMenuItem(title: "", action: #selector(handleQuit),     keyEquivalent: "")
 
   // Font Size submenu
@@ -36,12 +37,14 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   private let languageParent  = NSMenuItem(title: "", action: nil, keyEquivalent: "")
   private let memoSectionHeader  = NSMenuItem()
   private let settingsSectionHeader = NSMenuItem()
+  private let helpSectionHeader = NSMenuItem()
 
   private let appSettings: AppSettings
 
   var onNewMemo: (() -> Void)?
   var onOpenHome: (() -> Void)?
   var onReopenLastClosed: (() -> Void)?
+  var onOpenShortcuts: (() -> Void)?
 
   init(appSettings: AppSettings) {
     self.appSettings = appSettings
@@ -53,7 +56,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     }
 
     let allItems = [
-      newMemoItem, allMemosItem, reopenItem, quitItem,
+      newMemoItem, allMemosItem, reopenItem, shortcutsItem, quitItem,
       fontSmallItem, fontMediumItem, fontLargeItem,
       memoSmallItem, memoMediumItem, memoLargeItem,
       memoColorDefaultItem, memoColorColorfulItem,
@@ -82,7 +85,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
     languageParent.submenu = languageMenu
 
     // Section headers
-    for header in [memoSectionHeader, settingsSectionHeader] {
+    for header in [memoSectionHeader, settingsSectionHeader, helpSectionHeader] {
       header.isEnabled = false
     }
 
@@ -99,6 +102,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
       memoSizeParent,
       memoColorParent,
       languageParent,
+      NSMenuItem.separator(),
+      helpSectionHeader,
+      shortcutsItem,
       NSMenuItem.separator(),
       quitItem,
     ]
@@ -124,10 +130,12 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   private func updateMenuTitles() {
     memoSectionHeader.attributedTitle = sectionHeaderString(Str.menuSectionMemo)
     settingsSectionHeader.attributedTitle = sectionHeaderString(Str.menuSectionSettings)
+    helpSectionHeader.attributedTitle = sectionHeaderString(Str.menuSectionHelp)
 
     newMemoItem.title    = Str.menuNewMemo
     allMemosItem.title   = Str.allMemos
     reopenItem.title     = Str.menuReopenLast
+    shortcutsItem.title  = Str.menuShortcuts
     quitItem.title       = Str.menuQuit
 
     fontSmallItem.title  = Str.sizeSmall
@@ -206,6 +214,7 @@ final class MenuBarController: NSObject, NSMenuDelegate {
   @objc private func handleNewMemo()  { onNewMemo?() }
   @objc private func handleOpenHome() { onOpenHome?() }
   @objc private func handleReopen()   { onReopenLastClosed?() }
+  @objc private func handleOpenShortcuts() { onOpenShortcuts?() }
   @objc private func handleQuit()     { NSApp.terminate(nil) }
 }
 
