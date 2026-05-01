@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class MemoWindowUIState: ObservableObject {
   @Published var isPinned: Bool
+  @Published var isCollapsed = false
   @Published var focusToken = UUID()
   @Published var flashCommand: CommandTheme? = nil
 

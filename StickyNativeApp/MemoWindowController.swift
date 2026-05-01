@@ -6,6 +6,7 @@ import SwiftUI
 final class MemoWindowController: NSWindowController, NSWindowDelegate {
   static let defaultContentSize = NSSize(width: 440, height: 300)
   static let minimumContentSize = NSSize(width: 320, height: 220)
+  static let collapsedContentSize = NSSize(width: 160, height: 40)
 
   let memo: MemoWindow
 
@@ -19,6 +20,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   private var hostingView: NSView?
   private var contentCancellable: AnyCancellable?
   private var didExplicitFlush = false
+  private var expandedFrameBeforeCollapse: NSRect?
 
   init(
     memo: MemoWindow,
@@ -96,6 +98,9 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   }
 
   func showAndFocusEditor() {
+    if uiState.isCollapsed {
+      setCollapsed(false)
+    }
     requestEditorFocus()
     NSApp.activate(ignoringOtherApps: true)
     window?.makeKeyAndOrderFront(nil)
@@ -111,6 +116,10 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
+  func toggleCollapsed() {
+    setCollapsed(!uiState.isCollapsed)
+  }
+
   func windowWillClose(_ notification: Notification) {
     if Self.isDraftEmpty(memo.draft) {
       onClose(ClosedMemoRecord(memoID: memo.id, frame: nil, isAutoDelete: true))
@@ -118,7 +127,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       if !didExplicitFlush {
         onFlush(memo.id, currentContent)
       }
-      onClose(ClosedMemoRecord(memoID: memo.id, frame: window?.frame))
+      onClose(ClosedMemoRecord(memoID: memo.id, frame: persistedFrameForClose))
     }
   }
 
@@ -137,6 +146,9 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       onPinToggle: { [weak self] in
         guard let self else { return }
         pinWindow(!uiState.isPinned)
+      },
+      onCollapseToggle: { [weak self] in
+        self?.toggleCollapsed()
       },
       onTrash: { [weak self] in
         guard let self else { return }
@@ -174,8 +186,45 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     EditorContent(attributedString: memo.attributedContent)
   }
 
+  private var persistedFrameForClose: NSRect? {
+    if uiState.isCollapsed {
+      return expandedFrameBeforeCollapse ?? window?.frame
+    }
+    return window?.frame
+  }
+
   private func requestEditorFocus() {
     uiState.requestEditorFocus()
+  }
+
+  private func setCollapsed(_ collapsed: Bool) {
+    guard let window, collapsed != uiState.isCollapsed else { return }
+
+    if collapsed {
+      expandedFrameBeforeCollapse = window.frame
+      uiState.isCollapsed = true
+      window.contentMinSize = Self.collapsedContentSize
+
+      let currentFrame = window.frame
+      let targetSize = Self.collapsedContentSize
+      let targetFrame = NSRect(
+        x: currentFrame.minX,
+        y: currentFrame.maxY - targetSize.height,
+        width: targetSize.width,
+        height: targetSize.height
+      )
+      window.setFrame(targetFrame, display: true, animate: true)
+      window.makeFirstResponder(nil)
+    } else {
+      uiState.isCollapsed = false
+      window.contentMinSize = Self.minimumContentSize
+
+      let targetFrame = expandedFrameBeforeCollapse
+        ?? NSRect(origin: window.frame.origin, size: Self.defaultContentSize)
+      expandedFrameBeforeCollapse = nil
+      window.setFrame(targetFrame, display: true, animate: true)
+      requestEditorFocus()
+    }
   }
 
   private func hideStandardWindowButtons(in window: NSWindow) {

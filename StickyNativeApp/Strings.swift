@@ -116,6 +116,8 @@ struct Str {
   static var trashAlertTitle:     String { isJa ? "このメモをゴミ箱に移しますか？" : "Move this memo to trash?" }
   static var trashAlertConfirm:   String { isJa ? "ゴミ箱に移す"              : "Move to Trash" }
   static var trashAlertCancel:    String { isJa ? "キャンセル"                : "Cancel" }
+  static var collapseMemo:        String { isJa ? "たたむ"                   : "Collapse" }
+  static var expandMemo:          String { isJa ? "開く"                     : "Expand" }
 
   // MARK: - Editor context menu
   static var editorBold:          String { isJa ? "太字"                    : "Bold" }

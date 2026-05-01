@@ -307,7 +307,7 @@ struct CheckableTextView: NSViewRepresentable {
     textView.drawsBackground = false
     textView.textColor = .labelColor
     textView.insertionPointColor = .labelColor
-    textView.textContainerInset = NSSize(width: 14, height: 14)
+    textView.textContainerInset = NSSize(width: 10, height: 8)
     textView.minSize = NSSize(width: 0, height: 0)
     textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
     textView.isVerticallyResizable = true
