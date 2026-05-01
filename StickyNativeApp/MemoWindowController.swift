@@ -24,6 +24,8 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   private var didExplicitFlush = false
   private var expandedFrameBeforeCollapse: NSRect?
   private var isApplyingProgrammaticFrameChange = false
+  private var isWithinCollapseThresholdDuringLiveResize = false
+  private var autoCollapseTask: Task<Void, Never>?
 
   init(
     memo: MemoWindow,
@@ -145,6 +147,12 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   func windowDidEndLiveResize(_ notification: Notification) {
     guard let window, !isApplyingProgrammaticFrameChange else { return }
     handleResizeCompletion(frame: window.frame)
+    isWithinCollapseThresholdDuringLiveResize = false
+  }
+
+  func windowDidResize(_ notification: Notification) {
+    guard let window, !isApplyingProgrammaticFrameChange, window.inLiveResize else { return }
+    handleLiveResize(frame: window.frame)
   }
 
   private func makeRootView() -> MemoWindowView {
@@ -207,6 +215,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
   private func setCollapsed(_ collapsed: Bool) {
     guard let window, collapsed != uiState.isCollapsed else { return }
+    autoCollapseTask?.cancel()
 
     if collapsed {
       expandedFrameBeforeCollapse = window.frame
@@ -241,6 +250,23 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     }
   }
 
+  private func handleLiveResize(frame: NSRect) {
+    guard !uiState.isCollapsed else {
+      isWithinCollapseThresholdDuringLiveResize = false
+      return
+    }
+
+    let isWithinThreshold = frame.width <= Self.autoCollapseThreshold.width
+      && frame.height <= Self.autoCollapseThreshold.height
+
+    if isWithinThreshold && !isWithinCollapseThresholdDuringLiveResize {
+      isWithinCollapseThresholdDuringLiveResize = true
+      uiState.triggerThresholdCue()
+    } else if !isWithinThreshold {
+      isWithinCollapseThresholdDuringLiveResize = false
+    }
+  }
+
   private func handleResizeCompletion(frame: NSRect) {
     if uiState.isCollapsed {
       let shouldExpand = frame.width >= Self.autoExpandThreshold.width || frame.height >= Self.autoExpandThreshold.height
@@ -258,6 +284,17 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
 
     let shouldCollapse = frame.width <= Self.autoCollapseThreshold.width && frame.height <= Self.autoCollapseThreshold.height
     guard shouldCollapse else { return }
+
+    if isWithinCollapseThresholdDuringLiveResize {
+      autoCollapseTask?.cancel()
+      autoCollapseTask = Task { @MainActor [weak self] in
+        try? await Task.sleep(for: .milliseconds(140))
+        guard let self, !Task.isCancelled else { return }
+        self.setCollapsed(true)
+      }
+      return
+    }
+
     setCollapsed(true)
   }
 

@@ -220,9 +220,9 @@ struct MemoWindowView: View {
 
   private var flashOverlay: some View {
     containerShape
-      .stroke(uiState.flashCommand?.color ?? .clear, lineWidth: 2)
-      .shadow(color: (uiState.flashCommand?.color ?? .clear).opacity(0.7), radius: 12)
-      .opacity(uiState.flashCommand != nil ? 1 : 0)
+      .stroke(uiState.activeCue?.color ?? .clear, lineWidth: uiState.activeCue == .threshold ? 3 : 2)
+      .shadow(color: (uiState.activeCue?.color ?? .clear).opacity(uiState.activeCue == .threshold ? 0.95 : 0.7), radius: uiState.activeCue == .threshold ? 16 : 12)
+      .opacity(uiState.activeCue != nil ? 1 : 0)
   }
 
   private var chromeControlOpacity: Double {
