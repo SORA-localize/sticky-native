@@ -5,8 +5,10 @@ import SwiftUI
 @MainActor
 final class MemoWindowController: NSWindowController, NSWindowDelegate {
   static let defaultContentSize = NSSize(width: 440, height: 300)
-  static let minimumContentSize = NSSize(width: 320, height: 220)
-  static let collapsedContentSize = NSSize(width: 160, height: 40)
+  static let minimumContentSize = NSSize(width: 240, height: 120)
+  static let collapsedContentSize = NSSize(width: 220, height: 40)
+  private static let autoCollapseThreshold = NSSize(width: 290, height: 120)
+  private static let autoExpandThreshold = NSSize(width: 310, height: 90)
 
   let memo: MemoWindow
 
@@ -21,6 +23,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
   private var contentCancellable: AnyCancellable?
   private var didExplicitFlush = false
   private var expandedFrameBeforeCollapse: NSRect?
+  private var isApplyingProgrammaticFrameChange = false
 
   init(
     memo: MemoWindow,
@@ -139,6 +142,11 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
     uiState.isPinned
   }
 
+  func windowDidEndLiveResize(_ notification: Notification) {
+    guard let window, !isApplyingProgrammaticFrameChange else { return }
+    handleResizeCompletion(frame: window.frame)
+  }
+
   private func makeRootView() -> MemoWindowView {
     MemoWindowView(
       memo: memo,
@@ -213,7 +221,7 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
         width: targetSize.width,
         height: targetSize.height
       )
-      window.setFrame(targetFrame, display: true, animate: true)
+      applyFrame(targetFrame, animate: true)
       window.makeFirstResponder(nil)
     } else {
       uiState.isCollapsed = false
@@ -222,8 +230,43 @@ final class MemoWindowController: NSWindowController, NSWindowDelegate {
       let targetFrame = expandedFrameBeforeCollapse
         ?? NSRect(origin: window.frame.origin, size: Self.defaultContentSize)
       expandedFrameBeforeCollapse = nil
-      window.setFrame(targetFrame, display: true, animate: true)
+      let resolvedFrame = NSRect(
+        x: targetFrame.minX,
+        y: targetFrame.minY,
+        width: max(targetFrame.width, Self.minimumContentSize.width),
+        height: max(targetFrame.height, Self.minimumContentSize.height)
+      )
+      applyFrame(resolvedFrame, animate: true)
       requestEditorFocus()
+    }
+  }
+
+  private func handleResizeCompletion(frame: NSRect) {
+    if uiState.isCollapsed {
+      let shouldExpand = frame.width >= Self.autoExpandThreshold.width || frame.height >= Self.autoExpandThreshold.height
+      guard shouldExpand else { return }
+
+      expandedFrameBeforeCollapse = NSRect(
+        x: frame.minX,
+        y: frame.minY,
+        width: max(frame.width, Self.minimumContentSize.width),
+        height: max(frame.height, Self.minimumContentSize.height)
+      )
+      setCollapsed(false)
+      return
+    }
+
+    let shouldCollapse = frame.width <= Self.autoCollapseThreshold.width && frame.height <= Self.autoCollapseThreshold.height
+    guard shouldCollapse else { return }
+    setCollapsed(true)
+  }
+
+  private func applyFrame(_ frame: NSRect, animate: Bool) {
+    guard let window else { return }
+    isApplyingProgrammaticFrameChange = true
+    window.setFrame(frame, display: true, animate: animate)
+    DispatchQueue.main.async { [weak self] in
+      self?.isApplyingProgrammaticFrameChange = false
     }
   }
 

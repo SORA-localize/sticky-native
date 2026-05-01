@@ -2,6 +2,7 @@ import Foundation
 
 enum MemoTitleFormatter {
   private static let titleLimit = 20
+  private static let collapsedTitleLimit = 8
 
   static func generatedTitle(from draft: String) -> String {
     let title = firstContentLine(from: draft)
@@ -13,6 +14,11 @@ enum MemoTitleFormatter {
   static func displayTitle(from draft: String) -> String {
     let title = generatedTitle(from: draft)
     return title.isEmpty ? Str.newMemoTitle : title
+  }
+
+  @MainActor
+  static func collapsedDisplayTitle(from draft: String) -> String {
+    abbreviated(displayTitle(from: draft), limit: collapsedTitleLimit)
   }
 
   static func previewText(from draft: String) -> String {
@@ -32,7 +38,11 @@ enum MemoTitleFormatter {
   }
 
   private static func abbreviated(_ title: String) -> String {
-    guard title.count > titleLimit else { return title }
-    return String(title.prefix(titleLimit)) + "..."
+    abbreviated(title, limit: titleLimit)
+  }
+
+  private static func abbreviated(_ title: String, limit: Int) -> String {
+    guard title.count > limit else { return title }
+    return String(title.prefix(limit)) + "..."
   }
 }

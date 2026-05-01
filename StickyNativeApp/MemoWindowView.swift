@@ -69,9 +69,10 @@ struct MemoWindowView: View {
         .clipShape(topStripShape)
 
       HStack(spacing: 8) {
-        leadingControls
-        Spacer(minLength: 0)
         collapseButton
+        titleLabel
+        Spacer(minLength: 0)
+        actionButtons
       }
       .padding(.horizontal, 10)
     }
@@ -81,17 +82,18 @@ struct MemoWindowView: View {
     .padding(.bottom, uiState.isCollapsed ? 6 : 2)
   }
 
-  private var leadingControls: some View {
-    HStack(spacing: 6) {
-      iconButton(
-        systemName: "xmark",
-        help: Str.trashAlertCancel,
-        hoveredCase: .close,
-        foreground: closeForegroundColor,
-        background: closeBackgroundColor,
-        action: onClose
-      )
+  private var titleLabel: some View {
+    Text(uiState.isCollapsed ? MemoTitleFormatter.collapsedDisplayTitle(from: memo.draft) : memo.title)
+      .font(.system(size: 12, weight: .semibold))
+      .foregroundStyle(Color.primary.opacity(uiState.isCollapsed ? 0.88 : 0.92))
+      .lineLimit(1)
+      .truncationMode(.tail)
+      .frame(maxWidth: uiState.isCollapsed ? 70 : 180, alignment: .leading)
+      .layoutPriority(1)
+  }
 
+  private var actionButtons: some View {
+    HStack(spacing: 6) {
       iconButton(
         systemName: uiState.isPinned ? "pin.fill" : "pin",
         help: Str.shortcutsTogglePin,
@@ -109,9 +111,16 @@ struct MemoWindowView: View {
         background: trashBackgroundColor,
         action: { showingTrashConfirmation = true }
       )
+
+      iconButton(
+        systemName: "xmark",
+        help: Str.shortcutsClose,
+        hoveredCase: .close,
+        foreground: closeForegroundColor,
+        background: closeBackgroundColor,
+        action: onClose
+      )
     }
-    .opacity(uiState.isCollapsed ? 0 : chromeControlOpacity)
-    .allowsHitTesting(!uiState.isCollapsed && chromeControlOpacity > 0.01)
   }
 
   private var collapseButton: some View {
@@ -121,7 +130,7 @@ struct MemoWindowView: View {
       hoveredCase: .collapse,
       foreground: collapseForegroundColor,
       background: collapseBackgroundColor,
-      opacity: uiState.isCollapsed ? collapseCollapsedOpacity : chromeControlOpacity,
+      opacity: affordanceOpacity,
       action: onCollapseToggle
     )
   }
@@ -217,11 +226,11 @@ struct MemoWindowView: View {
   }
 
   private var chromeControlOpacity: Double {
-    isWindowHovered ? 1 : 0
+    isWindowHovered ? 1 : 0.72
   }
 
-  private var collapseCollapsedOpacity: Double {
-    isWindowHovered || hoveredControl == .collapse ? 1 : 0.4
+  private var affordanceOpacity: Double {
+    isWindowHovered || hoveredControl == .collapse ? 1 : 0.82
   }
 
   private var pinForegroundColor: Color {
