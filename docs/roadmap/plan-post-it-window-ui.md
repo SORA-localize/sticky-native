@@ -41,11 +41,8 @@ StickyNative ローカル補助文書:
 
 2026-05-01 時点で `/Users/hori/Desktop/Sticky/migration/*` は作業環境に存在せず、planning guideline が要求する migration SSOT は直接参照できない。
 
-したがって本計画は、現行ローカル文書、現行実装、参考スクショを根拠にした下書きに留める。  
-本計画はこのままでは実装着手不可とし、以下を実装ブロッカーとして扱う。
-
-- migration SSOT を復旧して本計画と再照合する
-- もしくは planning guideline 自体を更新し、migration unavailable 時の正式代替手順を先に文書化する
+したがって本計画は、planning guideline の `migration SSOT unavailable 時の正式代替手順` を適用して扱う。  
+本計画の実装着手条件は、migration unavailable の事実と変更範囲の限定、`K-32`、強化された Gate / 回帰確認 / 実機確認を維持することに置く。
 
 ### 既存計画との関係
 
@@ -86,6 +83,9 @@ StickyNative ローカル補助文書:
   - close / reopen / relaunch と collapsed frame 復元の影響確認
 - `StickyNativeApp/CheckableTextView.swift`
   - post-it 一面 UI にした後も first mouse / editor focus を壊していないか確認する
+- `StickyNativeApp/MemoTitleFormatter.swift`
+  - expanded / collapsed の title 表示ルールを一元管理する
+  - empty memo を含む short title 生成を担う
 
 確認のみ:
 
@@ -116,9 +116,12 @@ StickyNative ローカル補助文書:
 | U-30 | UI | 現在の memo window は header と editor card が分離しており、一枚の post-it として見えない |
 | U-31 | UI | pin / trash / close などの controls が常時表示され、参考 UI の静かな見た目と異なる |
 | U-32 | UI | editor の書き始め位置が上端帯の下に押し込まれ、付箋の自然な書き出し感が弱い |
+| U-33 | UI | title 自動生成表示が strip から消えており、メモの識別性が下がっている |
+| U-34 | UI | strip 内の affordance と action icon の並びが参考 UI と合っておらず、操作の意味順序が弱い |
 | W-30 | Window | 現在の最小サイズ `320x220` では、参考 UI の細長い collapsed state に到達できない |
 | W-31 | Window | drag source が中央の専用 handle に限定されており、参考 UI の「上端帯ならどこでも掴める」に合っていない |
 | W-32 | Window | collapsed から expanded に戻す時の frame source of truth が未定義 |
+| W-33 | Window | resize による auto-collapse / auto-expand の閾値、発火条件、振動防止ルールが未定義 |
 | F-30 | Focus | hover-only controls と collapsed state 導入で first mouse / ゼロクリック入力が壊れる可能性がある |
 | P-30 | Persistence | collapsed 中に close / reopen / relaunch した時、どの frame を保存し、expand 時に何を復元するか未定義 |
 | K-30 | Knowledge | 既存計画の dedicated drag handle 方針と、今回の参考 UI の drag 領域方針が衝突している |
@@ -180,6 +183,16 @@ StickyNative ローカル補助文書:
 - collapsed state は短い pill 状
 - hover 時だけ controls が見える挙動と相性が良い
 
+### 追加合意（2026-05-01）
+
+- title 自動生成表示は復活する
+- controls は左寄せしない
+- expanded の並びは `minus | title | pin | trash | close`
+- collapsed の並びは `plus | short title | pin | trash | close`
+- collapsed 時も空タイトルを例外扱いせず、短縮 title 表示へ統一する
+- resize で閾値以下になったら auto-collapse する
+- 再度広げて閾値を超えたら auto-expand する
+
 ---
 
 ## 技術詳細確認
@@ -190,8 +203,9 @@ expanded:
 
 - 一枚の post-it 面だけを見せる
 - 上端に薄い interaction strip を置く
-- 左上: close / pin / trash
-- 右上: collapse button
+- strip 内の並びは `minus | title | pin | trash | close`
+- title は既存 `MemoTitleFormatter.displayTitle(from:)` を使う
+- title 上限は既存どおり約 20 文字 + `...`
 - controls は hover 時のみフェード表示
 - top strip の control 以外は drag 可能
 - editor の書き始めは surface 左上寄りに置く
@@ -200,7 +214,9 @@ collapsed:
 
 - 本文 editor は非表示
 - 付箋本体は細長い pill 状の最小 frame になる
-- 右上 affordance は `+` または expand icon に統一する
+- strip 内の並びは `plus | short title | pin | trash | close`
+- short title は collapsed 用の別 presentation を使う
+- 空 title でも `New Memo` / `新規メモ` を short 化して表示する
 - collapsed 面でも drag 可能
 - expanded へ戻した時だけ editor focus を復帰させる
 
@@ -231,6 +247,7 @@ collapsed:
 - root hover 検出と control fade animation を持つ
 - top strip visual と control 群を描画する
 - expanded / collapsed の両レイアウトを分岐する
+- title と control の順序を `leading affordance -> title -> actions` に固定する
 - editor card 用の独立背景を持たない
 
 `MemoEditorView.swift`:
@@ -248,6 +265,12 @@ collapsed:
 - frame persistence の source of truth を引き続き `window.frame` とする
 - collapsed/expanded の別 schema は持たない
 - reopen 時は保存 frame をそのまま復元する
+
+`MemoTitleFormatter.swift`:
+
+- expanded 用 display title と collapsed 用 short title を両方提供する
+- empty memo でも同一 formatter を通す
+- 日本語 / 英語で文字数固定を分けず、collapsed 幅に収まる presentation を返す
 
 ### AppKit と SwiftUI の境界
 
@@ -292,6 +315,23 @@ SwiftUI:
 - reopen / relaunch 後は expanded 状態で復元する
 - collapsed 維持の永続化は別計画に分離し、初期実装では扱わない
 
+### title 表示の source of truth
+
+title 表示は `MemoTitleFormatter` を唯一の source of truth とする。
+
+採用方針:
+
+- expanded は既存 `displayTitle(from:)` を使う
+- collapsed は `collapsedDisplayTitle(from:)` 相当の短縮表示を追加する
+- empty memo は `Str.newMemoTitle` を経由した後に collapsed short 化する
+- View 層で独自に `prefix(6)` のような切り方をしない
+
+理由:
+
+- 日本語と英語で固定文字数の見え方が異なる
+- title 仕様を View ごとに持つと将来また二重化する
+- auto-collapse / manual collapse / reopen 後 expanded の全経路で同じ規則を使える
+
 ### drag と editor の分離
 
 本計画では `window.isMovableByWindowBackground = false` を維持する。  
@@ -317,9 +357,10 @@ controls の表示状態は root hover だけで決める。
 - pointer enter: controls opacity を 1 へ
 - pointer leave: controls opacity を 0 へ
 - fade duration は `0.12` から `0.18` 秒程度の短い `easeOut`
-- expanded 状態では左上 controls と右上 collapse affordance を hover 時のみ表示する
-- collapsed 状態では expand affordance だけを常時 low opacity で残し、hover 時に full opacity へ上げる
-- collapsed 中の左上 controls は表示しない
+- expanded 状態では `minus | title | pin | trash | close` 全体を strip 内に表示する
+- collapsed 状態では `plus | short title | pin | trash | close` 全体を strip 内に表示する
+- hover 時の fade は action icon 群へ適用し、title の視認性は維持する
+- collapsed 状態でも `plus` は常時見える
 
 注意:
 
@@ -361,6 +402,12 @@ drag:
 
 - expanded / collapsed の両方で top strip からのみ開始する
 - controls / editor は drag source にしない
+
+resize:
+
+- user resize が collapse 閾値以下へ入ったら auto-collapse する
+- collapsed 中に user resize で十分広がったら auto-expand する
+- auto-collapse / auto-expand の閾値は hysteresis を持たせ、境界付近で振動しないようにする
 
 後続フェーズ衝突:
 
@@ -443,6 +490,7 @@ Gate:
 
 - `W-30`
 - `W-32`
+- `W-33`
 - `P-30`
 
 変更対象:
@@ -454,12 +502,14 @@ Gate:
 
 1. collapsed size を仮決めする
 2. `expandedFrameBeforeCollapse` を controller 内メモリで保持する
-3. collapse -> expand -> close -> reopen の frame 遷移を確認する
-4. relaunch 後も expanded frame がそのまま保存・復元されることを確認する
+3. manual collapse -> expand -> close -> reopen の frame 遷移を確認する
+4. resize 閾値ベースの auto-collapse / auto-expand が振動しないことを確認する
+5. relaunch 後も expanded frame がそのまま保存・復元されることを確認する
 
 Gate:
 
 - collapse / expand で window frame が破綻しない
+- auto-collapse / auto-expand が境界付近でループしない
 - close / reopen 後も window が画面外へ飛ばない
 - relaunch 後も expanded frame 保存経路が既存と競合しない
 
@@ -473,6 +523,8 @@ Gate:
 
 - `U-30`
 - `U-32`
+- `U-33`
+- `U-34`
 
 変更対象:
 
@@ -483,11 +535,15 @@ Gate:
 
 1. editor 独立 card を除去する
 2. top strip と editor を一枚の surface 内に再配置する
-3. 1 行目 caret の位置と controls 余白を調整する
+3. `minus | title | pin | trash | close` の expanded strip を構成する
+4. `plus | short title | pin | trash | close` の collapsed strip を構成する
+5. 1 行目 caret の位置と controls 余白を調整する
 
 Gate:
 
 - expanded 状態で一枚の post-it に見える
+- title 自動生成表示が復活している
+- action icon の順序が `pin -> trash -> close` になっている
 - editor の first mouse / ゼロクリック入力が維持される
 - editor と controls の hit test が競合しない
 
@@ -543,11 +599,13 @@ Gate:
 
 1. collapsed 専用レイアウトを入れる
 2. expand affordance を確定する
-3. hover-only rules を collapsed 状態に適用する
+3. short title 表示を `MemoTitleFormatter` 経由へ統一する
+4. hover-only rules を collapsed 状態に適用する
 
 Gate:
 
 - collapsed 見た目が pill 状で破綻しない
+- collapsed 時に `plus | short title | pin | trash | close` が成立する
 - expand 後に editor focus が自然に戻る
 - pin / close / trash と collapsed state が競合しない
 
@@ -555,7 +613,7 @@ Gate:
 
 ## Gate条件
 
-- migration SSOT 不在を解消するか、planning guideline 側の正式代替手順を先に確立する
+- migration SSOT unavailable 時の正式代替手順を適用していること
 - `isMovableByWindowBackground = false` を維持する
 - first mouse / ゼロクリック入力を壊さない
 - close / reopen / relaunch の frame 保存経路を増やさない
@@ -573,6 +631,8 @@ Gate:
 - live resize 中に surface clipping が破綻しないか
 - collapsed 状態で close した memo を reopen しても失われないか
 - multiple memo を開いた状態で collapsed / expanded を混ぜても整合するか
+- auto-collapse 後に再度広げると auto-expand するか
+- collapsed / expanded のどちらでも title 表示が一貫しているか
 - build が通るか
 
 ---
@@ -582,14 +642,17 @@ Gate:
 1. `Cmd+Option+Enter` で新規 memo を開き、即入力できること
 2. expanded 状態で、上端帯の control 以外から drag できること
 3. expanded 状態で、editor 面を drag しようとしても text interaction が優先されること
-4. hover で controls が fade in し、hover out で fade out すること
-5. collapsed ボタンで pill 状へ畳めること
-6. collapsed 状態から expand で自然に元サイズへ戻ること
-7. collapsed 状態から drag / pin / close が破綻しないこと
-8. close -> reopen で frame が保存されること
-9. app relaunch 後に open memo が復元されること
-10. pinned memo の collapsed / expanded 切替で always-on-top が壊れないこと
-11. build が成功すること
+4. expanded 状態で title が自動生成表示され、並びが `minus | title | pin | trash | close` になること
+5. hover で action icon 群が fade in し、hover out で fade out すること
+6. collapsed ボタンで `plus | short title | pin | trash | close` に畳めること
+7. collapsed 状態から expand で自然に元サイズへ戻ること
+8. resize で十分小さくすると auto-collapse すること
+9. collapsed から再度広げると auto-expand すること
+10. collapsed 状態から drag / pin / close が破綻しないこと
+11. close -> reopen で frame が保存されること
+12. app relaunch 後に open memo が expanded で復元されること
+13. pinned memo の collapsed / expanded 切替で always-on-top が壊れないこと
+14. build が成功すること
 
 ---
 
@@ -598,10 +661,11 @@ Gate:
 ### 実装前に決め切ること
 
 - collapsed size の固定値
-- collapsed 時の右上 affordance を `+` とし、tooltip / accessibility label で expand を明示する
-- collapsed 中は右上 expand affordance だけを残し、左上 controls は隠す
+- collapsed 時の並びを `plus | short title | pin | trash | close` に固定する
+- expanded 時の並びを `minus | title | pin | trash | close` に固定する
 - top strip drag は `TopStripDragView` 新規追加で扱う
 - close 中 collapsed でも expanded frame を保存する方針を固定する
+- auto-collapse / auto-expand の閾値と hysteresis 幅
 
 ### 実装前に決めないこと
 
@@ -622,8 +686,8 @@ Gate:
 - [ ] 07_project_bootstrap を確認した
 - [ ] 09_seamless_ux_spec を確認した
 - [x] migration unavailable の現状を確認した
+- [x] planning guideline の正式代替手順を適用した
 - [x] local docs を確認した
-- [x] migration 未確認のままでは実装着手不可と明記した
 
 ### 変更範囲
 
